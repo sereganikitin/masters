@@ -1,0 +1,28 @@
+[Unit]
+Description=Masters Kiosk Admin API (Express + SQLite)
+After=network.target
+
+[Service]
+Type=simple
+User=seldegram
+Group=seldegram
+WorkingDirectory=/var/www/masters
+
+# Port 3001 is taken by another project on this host — use 3010.
+Environment="PORT=3010"
+Environment="NODE_ENV=production"
+# Set a strong token before enabling the service:
+#   sudo systemctl edit masters-api
+# and add an override that defines ADMIN_TOKEN, or edit this file directly.
+Environment="ADMIN_TOKEN=CHANGE_ME_BEFORE_ENABLING"
+
+ExecStart=/usr/bin/npx tsx server/index.ts
+Restart=always
+RestartSec=5
+
+# Logs go to journald — view with: journalctl -u masters-api -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

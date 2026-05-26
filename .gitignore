@@ -1,0 +1,30 @@
+node_modules
+dist
+.DS_Store
+*.local
+.vite
+.env
+.env.local
+.env.*.local
+
+# Build output / cache
+data/feed.xml
+src/data/apartments.json
+*.tsbuildinfo
+
+# Admin DB and backups
+data/admin.db
+data/admin.db-shm
+data/admin.db-wal
+*.bak-*
+
+# Logs
+*.log
+
+# Reference design dump (heavy, regenerable via MCP)
+design-refs/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea

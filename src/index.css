@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Onest", system-ui, sans-serif;
+    color: theme("colors.base.800");
+    background: theme("colors.base.0");
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  * {
+    -webkit-user-drag: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+}
+
+@layer components {
+  /* Kiosk stage: fixed 1920x1080 surface, scaled via JS to viewport.
+   * Transform/position is set by useStageScale; we only set sizing + origin here. */
+  .stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: top left;
+    overflow: hidden;
+    will-change: transform;
+  }
+
+  /* Touch surface: brief press scale + brightness shift, with relative+overflow so
+   * ripple children stay inside the bounds. */
+  .tap-surface {
+    position: relative;
+    overflow: hidden;
+    transition: transform 180ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 180ms ease;
+    transform: translateZ(0);
+  }
+  .tap-surface:active {
+    transform: scale(0.985) translateZ(0);
+    filter: brightness(0.96);
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+    transform: scale(0);
+    opacity: 0.85;
+    animation: ripple 600ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+
+  @keyframes ripple {
+    to {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+
+  /* Larger pressed feel for big tap targets (cards). */
+  .tap-card {
+    transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 220ms ease;
+  }
+  .tap-card:active {
+    transform: scale(0.992);
+    filter: brightness(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tap-surface,
+  .tap-surface:active,
+  .tap-card,
+  .tap-card:active {
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .ripple {
+    display: none !important;
+  }
+}

@@ -1,0 +1,43 @@
+name: Deploy to Timeweb
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/masters' }}
+
+            echo "==> Fetch latest"
+            git fetch --prune origin
+            git reset --hard origin/main
+
+            echo "==> Install deps (incl. dev — needed for tsx/typescript build)"
+            npm ci
+
+            echo "==> Build (data fetch + tsc + vite)"
+            npm run build
+
+            echo "==> Reload backend service"
+            sudo systemctl restart masters-api
+            sudo systemctl reload nginx || true
+
+            echo "==> Done"
+            git log -1 --pretty=format:'%h %s (%an)'
