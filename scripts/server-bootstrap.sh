@@ -16,9 +16,11 @@ DOMAIN="masters.infoseledka.ru"
 SERVICE="masters-api"
 SVC_USER="seldegram"
 
-echo "==> Ensuring base packages (node, nginx, sqlite, git)…"
+echo "==> Ensuring base packages (node, nginx, sqlite, build tools)…"
 sudo apt-get update -y
-sudo apt-get install -y git sqlite3 nginx
+# build-essential + python3 are required to compile native node modules
+# (better-sqlite3 falls back to source build if no prebuilt binary matches).
+sudo apt-get install -y git sqlite3 nginx build-essential python3
 
 if ! command -v node >/dev/null; then
   echo "Node not found — installing Node 20.x from NodeSource"
