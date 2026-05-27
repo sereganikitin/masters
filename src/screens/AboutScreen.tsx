@@ -6,14 +6,13 @@ import {
   IconClose,
   IconArrowRight,
   IconMap,
-  IconCube,
   IconPhone,
   IconPlay,
-  IconHome,
 } from "@/components/Icon";
 
-// Editorial about page modelled on cg-projects.ru — black-on-white layout,
-// huge UPPERCASE section titles, framed photos, metadata as a key/value list.
+// About page modelled on cg-projects.ru/about. Verbatim copy & section flow
+// per Figma frame 14057:31658. All section titles are huge UPPERCASE.
+
 export function AboutScreen() {
   const nav = useNavigate();
   return (
@@ -33,19 +32,13 @@ export function AboutScreen() {
       >
         <PageHeader />
         <Hero />
-        <SectionDivider />
         <Genplan />
-        <SectionDivider />
         <Tour3d />
-        <SectionDivider />
         <SpecialFormats />
-        <SectionDivider />
+        <Layouts />
         <Engineering />
-        <SectionDivider />
         <Construction />
-        <SectionDivider />
         <Office />
-        <SectionDivider />
         <Documents />
         <PageFooter />
       </div>
@@ -54,47 +47,84 @@ export function AboutScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Reusable primitives
+// Layout primitives
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PAGE_PAD = "px-20"; // 80px gutter on a 1920 stage
-const SECTION_PAD_Y = "py-28";
+const PAGE_PAD = "px-20"; // 80px gutter on 1920 stage
 
-function SectionTitle({
-  kicker,
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-sans text-upper uppercase tracking-[0.3em] text-base-600">{children}</p>
+  );
+}
+
+function SectionLabelDark({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-sans text-upper uppercase tracking-[0.3em] text-base-0/55">{children}</p>
+  );
+}
+
+function Heading({
   children,
+  className = "",
+  dark = false,
 }: {
-  kicker?: string;
   children: React.ReactNode;
+  className?: string;
+  dark?: boolean;
 }) {
   return (
-    <header className="mb-12">
-      {kicker && (
-        <Reveal mode="up">
-          <p className="mb-6 font-sans text-upper uppercase tracking-[0.3em] text-base-600">
-            {kicker}
-          </p>
-        </Reveal>
-      )}
-      <Reveal mode="up" delay={80}>
-        <h2 className="font-display text-[88px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] text-base-800">
-          {children}
-        </h2>
-      </Reveal>
-    </header>
+    <Reveal mode="up">
+      <h2
+        className={`font-display text-[88px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] ${dark ? "text-base-0" : "text-base-800"} ${className}`}
+      >
+        {children}
+      </h2>
+    </Reveal>
   );
 }
 
-function SectionDivider() {
+function PrimaryButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
-    <div className={`${PAGE_PAD}`}>
-      <div className="h-px w-full bg-base-800" />
-    </div>
+    <Pressable
+      onClick={onClick}
+      rippleColor="rgba(255,255,255,0.25)"
+      className="flex h-14 w-fit items-center gap-3 bg-accent px-7 font-sans text-body font-medium text-base-0"
+    >
+      {children}
+      <IconArrowRight size={18} />
+    </Pressable>
+  );
+}
+
+function SecondaryButton({
+  children,
+  onClick,
+  dark = false,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  dark?: boolean;
+}) {
+  return (
+    <Pressable
+      onClick={onClick}
+      rippleColor={dark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.1)"}
+      className={`flex h-14 w-fit items-center gap-3 border px-7 font-sans text-body font-medium ${dark ? "border-base-0/40 bg-transparent text-base-0" : "border-base-800 bg-base-0 text-base-800"}`}
+    >
+      {children}
+    </Pressable>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Header — slim navigation per cg-projects.ru
+// 1. Header
 // ─────────────────────────────────────────────────────────────────────────────
 
 function PageHeader() {
@@ -132,17 +162,16 @@ function PageHeader() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero — 2-column editorial layout
+// 2. Hero — split с метаданными слева и фото справа
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Hero() {
   return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
+    <section className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-2 gap-16">
-        {/* Left column — title + meta table */}
         <div>
           <Reveal mode="up">
-            <h1 className="font-display text-[88px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] text-base-800">
+            <h1 className="font-display text-[96px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] text-base-800">
               Премиальный
               <br />
               дом МАСТЕРС
@@ -163,7 +192,6 @@ function Hero() {
           </Reveal>
         </div>
 
-        {/* Right column — framed photo + CTA cards */}
         <div className="flex flex-col gap-6">
           <Reveal mode="up" delay={200}>
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-100">
@@ -193,7 +221,7 @@ function Hero() {
 
 function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[180px_1fr] gap-8 py-5">
+    <div className="grid grid-cols-[200px_1fr] gap-8 py-5">
       <dt className="font-sans text-small text-base-600">{label}</dt>
       <dd className="font-sans text-body font-medium leading-relaxed text-base-800">{children}</dd>
     </div>
@@ -228,90 +256,391 @@ function CtaTile({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Генплан проекта
+// 3. Генплан проекта — full-width section on dark background
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Genplan() {
   const nav = useNavigate();
-  const bgRef = useParallax<HTMLDivElement>(0.2);
+  const bgRef = useParallax<HTMLDivElement>(0.18);
+
+  // Infrastructure + section labels positioned over the aerial photo.
+  // Coordinates are percentage-based for responsive scaling across resolutions.
+  // Style identical to OverlayLayer ChipLabel (dark bg, white primary, dim secondary).
+  const labels: { x: number; y: number; primary: string; secondary?: string }[] = [
+    { x: 22, y: 18, primary: "Школа № 117" },
+    { x: 12, y: 36, primary: "Детский сад" },
+    { x: 78, y: 22, primary: "Парк «Берёзовая роща»" },
+    { x: 86, y: 48, primary: "м. ЦСКА", secondary: "15 мин" },
+    { x: 8, y: 68, primary: "ул. Викторенко" },
+    { x: 32, y: 60, primary: "1 секция", secondary: "75 кв." },
+    { x: 47, y: 70, primary: "2 секция", secondary: "334 кв." },
+    { x: 60, y: 62, primary: "3 секция", secondary: "67 кв." },
+    { x: 70, y: 74, primary: "4 секция", secondary: "53 кв." },
+    { x: 84, y: 72, primary: "5 секция", secondary: "32 кв." },
+  ];
+
   return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle>Генплан проекта</SectionTitle>
+    <section className="relative w-full bg-night-500 text-base-0">
+      <div className={`${PAGE_PAD} pb-16 pt-24`}>
+        <Heading dark>Генплан проекта</Heading>
+      </div>
 
-      <div className="grid grid-cols-[1.6fr_1fr] gap-16">
-        <Reveal mode="left" delay={120}>
-          <div className="relative aspect-[16/10] w-full overflow-hidden bg-base-100">
-            <div ref={bgRef} className="absolute inset-0 -top-[5%] h-[110%]">
-              <img
-                src="/images/hero-genplan.png"
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        </Reveal>
+      <div className="relative h-[820px] w-full overflow-hidden">
+        <div ref={bgRef} className="absolute inset-0 -top-[5%] h-[110%]">
+          <img
+            src="/images/hero-genplan.png"
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
 
-        <div className="flex flex-col justify-between">
-          <Reveal mode="right" delay={180}>
-            <p className="font-sans text-h5 text-base-700">
-              5 секций ансамбля, школа №117 и детский сад в шаговой доступности,
-              парк «Берёзовая роща», 15 минут до м. ЦСКА и ТЦ «Авиапарк».
-            </p>
-          </Reveal>
-
-          <Reveal mode="up" delay={300}>
-            <Pressable
-              onClick={() => nav("/genplan")}
-              rippleColor="rgba(255,255,255,0.25)"
-              className="mt-10 flex h-14 w-fit items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
+        {/* Infrastructure / section chips overlay */}
+        <div className="absolute inset-0">
+          {labels.map((l, i) => (
+            <Reveal
+              key={`${l.primary}-${i}`}
+              mode="zoom"
+              delay={i * 60}
+              className="absolute"
+              style={{ left: `${l.x}%`, top: `${l.y}%`, transform: "translate(-50%, -50%)" }}
             >
-              <IconMap size={18} />
-              Открыть генплан
-              <IconArrowRight size={18} />
-            </Pressable>
-          </Reveal>
+              <InfraChip primary={l.primary} secondary={l.secondary} />
+            </Reveal>
+          ))}
+        </div>
+
+        {/* Bottom controls — toggles + CTA */}
+        <div className="absolute bottom-10 left-20 right-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ToggleChip active>инфраструктура</ToggleChip>
+            <ToggleChip>3d-тур</ToggleChip>
+          </div>
+          <PrimaryButton onClick={() => nav("/genplan")}>Открыть генплан</PrimaryButton>
         </div>
       </div>
     </section>
   );
 }
 
+/**
+ * Static chip shared between About → Genplan block and the live OverlayLayer.
+ * Dark Imperial Night background, white primary text, 55% white secondary.
+ * Matches Figma component «Hint / Infra label» — height 28px, padding 6px 12px.
+ */
+export function InfraChip({
+  primary,
+  secondary,
+}: {
+  primary: string;
+  secondary?: string;
+}) {
+  return (
+    <span className="inline-flex h-[22px] items-center bg-night-500/95 px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-base-0 backdrop-blur-md">
+      <span>{primary}</span>
+      {secondary && (
+        <>
+          <span className="mx-[6px] text-base-0/55">•</span>
+          <span className="text-base-0/55">{secondary}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+function ToggleChip({
+  children,
+  active = false,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <span
+      className={`flex h-12 items-center gap-3 px-5 font-sans text-small font-medium uppercase tracking-[0.15em] backdrop-blur-md ${active ? "bg-base-0 text-base-800" : "bg-base-0/15 text-base-0"}`}
+    >
+      <span className={`h-2 w-2 ${active ? "bg-accent" : "bg-base-0/40"}`} />
+      {children}
+    </span>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: 3D-тур
+// 4. 3D-тур — короткая секция с thumbnail справа
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Tour3d() {
   const nav = useNavigate();
   return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle>3D-тур</SectionTitle>
-
-      <div className="grid grid-cols-[1fr_1.6fr] gap-16">
-        <div className="flex flex-col justify-between">
-          <Reveal mode="left" delay={120}>
-            <p className="font-sans text-h5 text-base-700">
-              Полноэкранный аэровид комплекса с возможностью свободно осмотреть фасады,
-              дворы и окружение.
-            </p>
+    <section className={`${PAGE_PAD} py-24`}>
+      <div className="grid grid-cols-[1fr_1.4fr] items-start gap-16">
+        <div>
+          <Reveal mode="up">
+            <SectionLabel>Виртуальный тур</SectionLabel>
           </Reveal>
-
-          <Reveal mode="up" delay={300}>
-            <Pressable
-              onClick={() => nav("/tour")}
-              rippleColor="rgba(255,255,255,0.25)"
-              className="mt-10 flex h-14 w-fit items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
-            >
-              <IconCube size={18} />
-              Запустить 3D-тур
-              <IconArrowRight size={18} />
-            </Pressable>
+          <Heading className="mt-6">3D-тур</Heading>
+          <Reveal mode="up" delay={200}>
+            <div className="mt-10">
+              <PrimaryButton onClick={() => nav("/tour")}>Смотреть 3D тур</PrimaryButton>
+            </div>
           </Reveal>
         </div>
 
-        <Reveal mode="right" delay={180}>
-          <div className="relative aspect-[16/10] w-full overflow-hidden bg-base-100">
+        <Reveal mode="right" delay={120}>
+          <div className="space-y-8">
+            <div className="grid grid-cols-[120px_1fr] gap-6">
+              <div className="relative aspect-square w-full overflow-hidden bg-base-100">
+                <img
+                  src="/images/about/tour-thumb.png"
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </div>
+              <p className="font-sans text-h5 leading-relaxed text-base-700">
+                Взгляните на район дома «Мастерс» с нового ракурса в нашем интерактивном
+                3D-туре. Переключайтесь между дневным и вечерним временем, чтобы оценить
+                панорамные виды Петровского парка, стадиона «ВЭБ Арена» и делового центра
+                Москва-Сити.
+              </p>
+            </div>
+            <p className="font-sans text-body leading-relaxed text-base-600">
+              Это уникальный шанс изучить среду, масштаб и перспективы будущего дома,
+              прежде чем сделать решающий выбор.
+            </p>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Особые форматы — 3 карточки с фото
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SpecialFormats() {
+  const items = [
+    {
+      tag: "01",
+      title: "Собственные террасы",
+      body:
+        "Ваша личная открытая гостиная под небом Москвы. Место для утреннего кофе, вечерних встреч и созерцания города в любое время года.",
+      image: "/images/about/format-01-terrace.png",
+    },
+    {
+      tag: "02",
+      title: "Ванные с окном",
+      body:
+        "Здесь утро начинается с мягкого естественного света. Продуманная планировка позволяет разместить окно так, чтобы оно освещало комнату, сохраняя при этом полную приватность.",
+      image: "/images/about/format-02-window-bath.png",
+    },
+    {
+      tag: "03",
+      title: "Квартиры с одиннадцатью окнами",
+      body:
+        "Просторная трехкомнатная квартира с одиннадцатью окнами наполнена светом и воздухом. Энергоэффективное остекление и усиленная звукоизоляция сохраняют комфортный микроклимат, тишину и приватность.",
+      image: "/images/about/format-03-eleven-windows.png",
+    },
+  ];
+  return (
+    <section className={`${PAGE_PAD} py-24`}>
+      <div className="mb-16">
+        <Reveal mode="up">
+          <SectionLabel>Архитектура и форматы</SectionLabel>
+        </Reveal>
+        <Heading className="mt-6">Особые форматы</Heading>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {items.map((it, i) => (
+          <Reveal key={it.tag} mode="up" delay={i * 100}>
+            <article className="flex h-full flex-col">
+              <div className="relative aspect-square w-full overflow-hidden bg-base-100">
+                <img
+                  src={it.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 hover:scale-[1.04]"
+                />
+                <span className="absolute left-5 top-5 bg-base-0/95 px-3 py-1.5 font-display text-[12px] font-semibold uppercase tracking-[0.1em] text-base-800">
+                  {it.tag}
+                </span>
+              </div>
+              <div className="mt-6 flex flex-1 flex-col">
+                <h3 className="font-display text-[24px] font-semibold uppercase leading-tight tracking-[0.02em] text-base-800">
+                  {it.title}
+                </h3>
+                <p className="mt-4 flex-1 font-sans text-body leading-relaxed text-base-600">
+                  {it.body}
+                </p>
+                <button className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60">
+                  Подробнее
+                  <IconArrowRight size={16} />
+                </button>
+              </div>
+            </article>
+          </Reveal>
+        ))}
+      </div>
+
+      <Reveal mode="up" delay={400}>
+        <div className="mt-12 flex justify-center">
+          <SecondaryButton>Показать ещё 3</SecondaryButton>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Планировки — превью карточки
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Layouts() {
+  const nav = useNavigate();
+  return (
+    <section className={`${PAGE_PAD} py-24`}>
+      <div className="grid grid-cols-[1fr_1.2fr] gap-16">
+        <div>
+          <Reveal mode="up">
+            <SectionLabel>Планировки</SectionLabel>
+          </Reveal>
+          <Heading className="mt-6">
+            Удобные
+            <br />
+            планировки
+          </Heading>
+
+          <Reveal mode="up" delay={200}>
+            <div className="mt-10 flex flex-wrap gap-2">
+              {["Студия", "1", "2", "3", "4+"].map((label, i) => (
+                <Pressable
+                  key={label}
+                  rippleColor="rgba(0,0,0,0.08)"
+                  className={`h-12 px-5 font-sans text-body font-medium transition-colors ${i === 2 ? "bg-night-500 text-base-0" : "border border-base-200 bg-base-0 text-base-800"}`}
+                >
+                  {label}
+                </Pressable>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal mode="up" delay={300}>
+            <div className="mt-10">
+              <PrimaryButton onClick={() => nav("/catalog")}>
+                Посмотреть все 158 квартир
+              </PrimaryButton>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal mode="right" delay={120}>
+          <div className="bg-night-500 p-8 text-base-0">
+            <div className="flex items-start gap-3">
+              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                White Box
+              </span>
+              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                Гардеробная
+              </span>
+              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                Ещё +4
+              </span>
+            </div>
+
+            <div className="mt-10">
+              <p className="font-sans text-small text-base-0/40">20 планировок</p>
+              <h3 className="mt-2 font-display text-[32px] font-semibold uppercase leading-none tracking-[0.02em]">
+                2-комн. квартир
+              </h3>
+            </div>
+
+            <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-base-0/15 pt-6 font-sans text-small">
+              <span className="text-base-0/55">Корпус</span>
+              <span className="text-right">12</span>
+              <span className="text-base-0/55">Секция</span>
+              <span className="text-right">24</span>
+              <span className="text-base-0/55">Этаж</span>
+              <span className="text-right">12/24</span>
+              <span className="text-base-0/55">Сдача</span>
+              <span className="text-right">IV кв 2026</span>
+            </div>
+
+            <div className="mt-8 space-y-2 font-sans text-small">
+              <div className="flex justify-between">
+                <span className="text-base-0/55">Площадь</span>
+                <span>65,2–67,6 м²</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-base-0/55">Стоимость</span>
+                <span>36,5–38,3 млн ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-base-0/55">Высота потолков</span>
+                <span>3,0–3,1 м</span>
+              </div>
+            </div>
+
+            <Pressable
+              onClick={() => nav("/catalog")}
+              rippleColor="rgba(255,255,255,0.18)"
+              className="mt-10 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
+            >
+              215 квартир с такой планировкой
+              <IconArrowRight size={18} />
+            </Pressable>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. Инженерные системы — dark section, фото справа
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Engineering() {
+  return (
+    <section className="relative w-full bg-night-500 text-base-0">
+      <div className="grid grid-cols-[1.1fr_1fr] gap-16">
+        <div className={`${PAGE_PAD} py-24`}>
+          <Reveal mode="up">
+            <SectionLabelDark>Мастерство в деталях</SectionLabelDark>
+          </Reveal>
+          <Heading dark className="mt-6">
+            Инженерные
+            <br />
+            системы
+          </Heading>
+
+          <Reveal mode="up" delay={200}>
+            <p className="mt-12 font-sans text-body leading-relaxed text-base-0/85">
+              В квартирах предусмотрены естественная вентиляция через открывающиеся
+              створки и приточные клапаны, а также центральная система кондиционирования
+              — остаётся установить только внутренний блок. Вода проходит многоступенчатую
+              очистку (механическая фильтрация, умягчение и тонкая очистка).
+            </p>
+            <p className="mt-6 font-sans text-body leading-relaxed text-base-0/85">
+              Предусмотрены повышенные электрические мощности, а для квартир с террасами —
+              дополнительные. В лобби и общественных зонах поддерживается комфортный
+              микроклимат, горячая вода подаётся сразу благодаря рециркуляции. Для удобства
+              жителей доступен Wi-Fi в лобби и на придомовой территории, а связь усилена в
+              паркинге и лифтах.
+            </p>
+          </Reveal>
+
+          <Reveal mode="up" delay={320}>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <PrimaryButton>Консультация</PrimaryButton>
+              <SecondaryButton dark>Заказать звонок</SecondaryButton>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal mode="right" delay={120}>
+          <div className="relative h-full min-h-[640px] w-full overflow-hidden bg-base-100">
             <img
-              src="/images/tour-scene.png"
+              src="/images/about/engineering.png"
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
@@ -323,186 +652,62 @@ function Tour3d() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Особые форматы
-// ─────────────────────────────────────────────────────────────────────────────
-
-function SpecialFormats() {
-  const items = [
-    { title: "Собственные террасы", note: "Видовые квартиры с террасой до 35 м²" },
-    { title: "Ванные с окном", note: "Естественный свет в санузлах" },
-    { title: "Квартиры с одиннадцатью окнами", note: "Угловые планировки в башнях" },
-    { title: "Мастер-спальни", note: "С приватной ванной и гардеробной" },
-    { title: "Кухни-гостиные", note: "От 28 м² с прямой инсоляцией" },
-    { title: "Высокие потолки 3,1 м", note: "Во всех квартирах" },
-  ];
-  return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle kicker="Особые форматы">Планировки,<br />которых нет<br />у соседей</SectionTitle>
-
-      <div className="grid grid-cols-3 gap-px bg-base-200">
-        {items.map((it, i) => (
-          <Reveal key={it.title} mode="up" delay={(i % 3) * 80} className="bg-base-0">
-            <div className="flex h-[320px] flex-col p-10">
-              <div className="font-display text-[40px] font-semibold leading-none tracking-tight tabular-nums text-base-600">
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <div className="mt-auto">
-                <h3 className="font-display text-[20px] font-semibold uppercase leading-tight tracking-[0.02em] text-base-800">
-                  {it.title}
-                </h3>
-                <p className="mt-3 font-sans text-body text-base-600">{it.note}</p>
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section: Каталог
-// ─────────────────────────────────────────────────────────────────────────────
-
-// (Реализован как часть Genplan/Tour3d уже не нужно — каталог логично перенести
-// в отдельный teaser с переходом /catalog ниже Engineering.)
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section: Инженерные системы
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Engineering() {
-  return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle kicker="Инженерные системы">Незаметный<br />комфорт</SectionTitle>
-
-      <div className="grid grid-cols-[1.4fr_1fr] gap-16">
-        <Reveal mode="left" delay={120}>
-          <p className="font-sans text-h5 leading-relaxed text-base-700">
-            Приточно-вытяжная вентиляция с подогревом, индивидуальные тепловые узлы,
-            бесперебойное водоснабжение с трёхступенчатой очисткой, резервное
-            электропитание и Wi-Fi покрытие во всех общественных зонах.
-          </p>
-        </Reveal>
-
-        <div className="flex flex-col items-start gap-3">
-          <Reveal mode="up" delay={200}>
-            <Pressable
-              rippleColor="rgba(255,255,255,0.25)"
-              className="flex h-14 items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
-            >
-              Консультация
-              <IconArrowRight size={18} />
-            </Pressable>
-          </Reveal>
-          <Reveal mode="up" delay={280}>
-            <Pressable
-              rippleColor="rgba(0,0,0,0.08)"
-              className="flex h-14 items-center gap-3 border border-base-800 bg-base-0 px-7 font-sans text-body font-medium text-base-800"
-            >
-              Заказать звонок
-            </Pressable>
-          </Reveal>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section: Динамика строительства
+// 8. Динамика строительства
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Construction() {
-  const rows = [
-    {
-      k: "Монолитные работы",
-      v: "Заливка колонн и плит перекрытий с 8-го по 12-й этажи",
-    },
-    {
-      k: "Фасадные работы",
-      v: "Подготовка к монтажу алюминиевых панелей и элементов остекления",
-    },
-    {
-      k: "Ландшафт",
-      v: "Начало работ по формированию приватного двора и линейного парка",
-    },
-    { k: "Инфраструктура", v: "Подключение временных коммуникаций" },
+  const bullets = [
+    "Монолитные работы: заливка колонн и плит перекрытий с 8-го по 12-й этажи.",
+    "Фасадные работы: подготовка к монтажу алюминиевых панелей и элементов остекления.",
+    "Начало работ по формированию ландшафта.",
   ];
   return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle kicker="Август 2025 · Корпус 1">Динамика<br />строительства</SectionTitle>
+    <section className={`${PAGE_PAD} py-24`}>
+      <Reveal mode="up">
+        <SectionLabel>Общий статус</SectionLabel>
+      </Reveal>
+      <Heading className="mt-6">
+        Динамика
+        <br />
+        строительства
+      </Heading>
 
-      <div className="grid grid-cols-[1.2fr_1fr] gap-16">
+      <div className="mt-16 grid grid-cols-[1fr_1fr] gap-16">
         <Reveal mode="left" delay={120}>
-          <ul className="divide-y divide-base-200 border-t border-base-200">
-            {rows.map((r) => (
-              <li key={r.k} className="grid grid-cols-[260px_1fr] gap-8 py-5">
-                <span className="font-display text-[16px] font-semibold uppercase tracking-[0.05em] text-base-800">
-                  {r.k}
-                </span>
-                <span className="font-sans text-body text-base-600">{r.v}</span>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <p className="font-sans text-h5 leading-relaxed text-base-800">
+              В августе работы были сконцентрированы на возведении вертикальных
+              конструкций и подготовке к монтажу уникальных фасадных решений.
+            </p>
 
-          <div className="mt-10">
-            <Pressable
-              rippleColor="rgba(255,255,255,0.25)"
-              className="flex h-14 w-fit items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
-            >
-              Смотреть галерею
-              <IconArrowRight size={18} />
-            </Pressable>
+            <ul className="mt-8 space-y-3 font-sans text-body leading-relaxed text-base-700">
+              {bullets.map((b) => (
+                <li key={b} className="flex gap-3">
+                  <span className="mt-2.5 h-1 w-3 flex-shrink-0 bg-base-800" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <span className="flex h-12 items-center bg-base-100 px-5 font-sans text-body font-medium text-base-800">
+                Корпус 1
+              </span>
+              <span className="flex h-12 items-center bg-base-100 px-5 font-sans text-body font-medium text-base-800">
+                Август 2025
+              </span>
+            </div>
+
+            <div className="mt-8">
+              <PrimaryButton>Смотреть галерею</PrimaryButton>
+            </div>
           </div>
         </Reveal>
 
         <Reveal mode="right" delay={200}>
           <div className="relative aspect-[4/5] w-full overflow-hidden bg-base-100">
             <img
-              src="/images/hero-choose.png"
-              alt="Фото со стройплощадки"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section: Офис продаж
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Office() {
-  return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle kicker="Офис продаж «Мастерс»">Москва, Проезд<br />Аэропорта, 8</SectionTitle>
-
-      <div className="grid grid-cols-[1fr_1.4fr] gap-16">
-        <div className="flex flex-col gap-4">
-          <Reveal mode="up" delay={120}>
-            <div className="flex items-center gap-4 font-sans text-h5 text-base-800">
-              <IconPhone size={22} />
-              <span>+7 (495) 021-11-11</span>
-            </div>
-          </Reveal>
-          <Reveal mode="up" delay={200}>
-            <Pressable
-              rippleColor="rgba(255,255,255,0.25)"
-              className="mt-6 flex h-14 w-fit items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
-            >
-              <IconMap size={18} />
-              Проложить маршрут
-            </Pressable>
-          </Reveal>
-        </div>
-
-        <Reveal mode="right" delay={200}>
-          <div className="relative aspect-[16/9] w-full overflow-hidden bg-base-100">
-            <img
-              src="/images/hero-genplan.png"
+              src="/images/about/construction.png"
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
@@ -514,31 +719,78 @@ function Office() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section: Документация
+// 9. Офис продаж — карточка с фоновым фото
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Office() {
+  return (
+    <section className={`${PAGE_PAD} py-24`}>
+      <div className="relative h-[520px] w-full overflow-hidden bg-night-500">
+        <img
+          src="/images/about/office.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-night-500 via-night-500/70 to-transparent" />
+
+        <div className="relative z-10 grid h-full grid-cols-2 px-16 py-14 text-base-0">
+          <div className="flex flex-col justify-center">
+            <Reveal mode="up">
+              <SectionLabelDark>Офис продаж</SectionLabelDark>
+            </Reveal>
+            <Heading dark className="mt-6">
+              Офис продаж
+              <br />
+              «Мастерс»
+            </Heading>
+            <Reveal mode="up" delay={180}>
+              <p className="mt-8 font-sans text-h5 text-base-0/85">
+                г. Москва, Проезд Аэропорта, 8
+              </p>
+            </Reveal>
+            <Reveal mode="up" delay={260}>
+              <div className="mt-3 flex items-center gap-3 font-sans text-h5 text-base-0/85">
+                <IconPhone size={20} />
+                <span>+7 (495) 021-11-11</span>
+              </div>
+            </Reveal>
+            <Reveal mode="up" delay={340}>
+              <div className="mt-10">
+                <PrimaryButton>
+                  <IconMap size={18} />
+                  Проложить маршрут
+                </PrimaryButton>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Документация — короткая секция в две колонки
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Documents() {
   return (
-    <section className={`${PAGE_PAD} ${SECTION_PAD_Y}`}>
-      <SectionTitle kicker="Документация">Проектная<br />документация<br />на ДОМ.РФ</SectionTitle>
-
-      <div className="grid grid-cols-[1.4fr_auto] items-end gap-16">
-        <Reveal mode="up" delay={120}>
-          <p className="font-sans text-h5 leading-relaxed text-base-700">
-            Актуальные планы, разрешения, проектные декларации и другие официальные
-            материалы для детального изучения.
-          </p>
-        </Reveal>
-
+    <section className={`${PAGE_PAD} py-24`}>
+      <div className="grid grid-cols-[1fr_auto] items-center gap-16 border-t border-base-200 pt-16">
+        <div>
+          <Reveal mode="up">
+            <SectionLabel>Документы</SectionLabel>
+          </Reveal>
+          <Reveal mode="up" delay={120}>
+            <p className="mt-6 max-w-[860px] font-sans text-h5 leading-relaxed text-base-800">
+              Вся проектная документация доступна на официальном портале ДОМ.РФ.
+              Здесь вы найдёте актуальные планы, разрешения, проектные декларации и
+              другие официальные материалы для детального изучения.
+            </p>
+          </Reveal>
+        </div>
         <Reveal mode="up" delay={200}>
-          <Pressable
-            rippleColor="rgba(255,255,255,0.25)"
-            className="flex h-14 items-center gap-3 bg-base-800 px-7 font-sans text-body font-medium text-base-0"
-          >
-            <IconHome size={18} />
-            Изучить документы
-            <IconArrowRight size={18} />
-          </Pressable>
+          <PrimaryButton>Изучить документы</PrimaryButton>
         </Reveal>
       </div>
     </section>
@@ -551,13 +803,20 @@ function Documents() {
 
 function PageFooter() {
   return (
-    <footer className={`border-t border-base-200 ${PAGE_PAD} py-10`}>
-      <div className="flex items-center gap-6 font-sans text-small text-base-600">
-        <span>© Capital Group · {new Date().getFullYear()}</span>
-        <span className="h-1 w-1 rounded-full bg-base-200" />
-        <a href="https://cg-projects.ru" onClick={(e) => e.preventDefault()} className="hover:text-base-800">
-          cg-projects.ru
-        </a>
+    <footer className={`border-t border-base-200 bg-night-500 ${PAGE_PAD} py-12 text-base-0/55`}>
+      <div className="flex items-center justify-between font-sans text-small">
+        <div className="flex items-center gap-6">
+          <span>© Capital Group · {new Date().getFullYear()}</span>
+          <span className="h-1 w-1 rounded-full bg-base-0/30" />
+          <a
+            href="https://cg-projects.ru"
+            onClick={(e) => e.preventDefault()}
+            className="hover:text-base-0"
+          >
+            cg-projects.ru
+          </a>
+        </div>
+        <span>ЖК МАСТЕРС · Capital Group</span>
       </div>
     </footer>
   );

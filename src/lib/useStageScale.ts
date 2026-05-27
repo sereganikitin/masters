@@ -13,7 +13,9 @@ export function useStageScale<T extends HTMLElement>() {
     const apply = () => {
       const scaleX = window.innerWidth / STAGE_W;
       const scaleY = window.innerHeight / STAGE_H;
-      const scale = Math.min(scaleX, scaleY);
+      // Cover: pick the larger scale so the stage always fills the viewport on both
+      // axes. The shorter axis overflows slightly; outer container clips it.
+      const scale = Math.max(scaleX, scaleY);
       const offsetX = (window.innerWidth - STAGE_W * scale) / 2;
       const offsetY = (window.innerHeight - STAGE_H * scale) / 2;
       el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
