@@ -56,9 +56,10 @@ interface GenplanCanvasProps {
   showPOI?: boolean;
   /** Optional manual label position overrides keyed by entityId. */
   labelOffsets?: Record<string, [number, number]>;
-  /** Shift all section chips + POI vertically (viewBox px). Used on the About
-   * embed where the cropped canvas needs labels nudged down. */
-  chipsOffsetY?: number;
+  /** Shift section chips (dark) vertically in viewBox px. */
+  sectionsOffsetY?: number;
+  /** Shift POI chips (light) vertically in viewBox px. */
+  poiOffsetY?: number;
 }
 
 /**
@@ -74,7 +75,8 @@ export function GenplanCanvas({
   showOverlays = false,
   showPOI = false,
   labelOffsets,
-  chipsOffsetY = 0,
+  sectionsOffsetY = 0,
+  poiOffsetY = 0,
 }: GenplanCanvasProps) {
   const house = getHouse();
   const { overlays, loading } = useOverlays("genplan", "");
@@ -132,7 +134,7 @@ export function GenplanCanvas({
             const count = countOf(num);
             const isActive = activeSection === num;
             const xPct = (pos.x / 1920) * 100;
-            const yPct = ((pos.y + chipsOffsetY) / 1080) * 100;
+            const yPct = ((pos.y + sectionsOffsetY) / 1080) * 100;
             return (
               <Reveal
                 key={num}
@@ -163,7 +165,7 @@ export function GenplanCanvas({
         <div className="pointer-events-none absolute inset-0">
           {POI_LABELS.map((p, i) => {
             const xPct = (p.pos.x / 1920) * 100;
-            const yPct = ((p.pos.y + chipsOffsetY) / 1080) * 100;
+            const yPct = ((p.pos.y + poiOffsetY) / 1080) * 100;
             return (
               <Reveal
                 key={`${p.label}-${i}`}

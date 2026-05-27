@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { OverlayChrome } from "@/components/OverlayChrome";
 import { Pressable } from "@/components/Pressable";
 import { GenplanCanvas } from "@/components/GenplanCanvas";
@@ -13,44 +13,23 @@ export function GenplanScreen() {
 
   const [rooms, setRooms] = useState<Set<RoomType>>(new Set());
 
-  const floorBounds = useMemo(() => {
-    const all = house.sections.flatMap((s) =>
-      Object.keys(s.apartmentsByFloor).map(Number),
-    );
-    return {
-      min: all.length ? Math.min(...all) : 1,
-      max: all.length ? Math.max(...all) : 25,
-    };
-  }, [house]);
-  const [floorMin, setFloorMin] = useState<number>(floorBounds.min);
-  const [floorMax, setFloorMax] = useState<number>(floorBounds.max);
-
-  // A section is visible iff it has apartments matching the room+floor filters.
+  // A section is visible iff it has apartments matching the room filter.
   // Sections not in the feed yet are visible only when no filter is applied,
   // because we can't verify them against criteria.
   const sectionVisible = (sectionNumber: number): boolean => {
     const section = house.sections.find((s) => s.number === sectionNumber);
     if (!section) {
-      // Not in feed — show only when filter is at defaults.
-      const noFilter =
-        rooms.size === 0 && floorMin === floorBounds.min && floorMax === floorBounds.max;
-      return noFilter;
+      return rooms.size === 0;
     }
+    if (rooms.size === 0) return true;
     const apts: Apartment[] = Object.values(section.apartmentsByFloor).flat();
-    return apts.some((a) => {
-      if (rooms.size > 0 && !rooms.has(a.roomType)) return false;
-      if (a.floor < floorMin || a.floor > floorMax) return false;
-      return true;
-    });
+    return apts.some((a) => rooms.has(a.roomType));
   };
 
   const openCatalog = (sectionNumber: number) => {
     const params = new URLSearchParams();
     params.set("section", String(sectionNumber));
     if (rooms.size > 0) params.set("rooms", Array.from(rooms).join(","));
-    if (floorMin !== floorBounds.min || floorMax !== floorBounds.max) {
-      params.set("floor", `${floorMin}-${floorMax}`);
-    }
     nav(`/catalog?${params.toString()}`);
   };
 
@@ -72,10 +51,9 @@ export function GenplanScreen() {
 
       <OverlayChrome />
 
-      {/* Bottom-left — room + floor filters. z-30 keeps them above overlay SVGs.
-        * No Reveal wrapper — these controls must be visible immediately on a
-        * fixed Stage where IntersectionObserver can be unreliable. */}
-      <div className="absolute bottom-10 left-10 z-30 flex flex-col gap-3">
+      {/* Bottom-left — room filter chips. z-30 above overlay SVGs.
+        * No Reveal wrapper — IntersectionObserver is unreliable on the scaled stage. */}
+      <div className="absolute bottom-10 left-10 z-30">
         <div className="flex flex-wrap items-center gap-2">
           {ROOM_TYPES.map((rt) => {
             const active = rooms.has(rt.key);
@@ -95,53 +73,9 @@ export function GenplanScreen() {
             );
           })}
         </div>
-
-        <div className="flex items-center gap-2 bg-base-0/95 px-4 py-2 backdrop-blur-md">
-          <span className="font-sans text-small font-medium uppercase tracking-[0.15em] text-base-600">
-            Этаж
-          </span>
-          <input
-            type="number"
-            min={floorBounds.min}
-            max={floorMax}
-            value={floorMin}
-            onChange={(e) =>
-              setFloorMin(
-                Math.max(floorBounds.min, Math.min(Number(e.target.value), floorMax)),
-              )
-            }
-            className="h-9 w-16 border border-base-200 bg-base-0 px-2 font-sans text-body tabular-nums text-base-800 outline-none focus:border-accent"
-          />
-          <span className="text-base-600">—</span>
-          <input
-            type="number"
-            min={floorMin}
-            max={floorBounds.max}
-            value={floorMax}
-            onChange={(e) =>
-              setFloorMax(
-                Math.min(floorBounds.max, Math.max(Number(e.target.value), floorMin)),
-              )
-            }
-            className="h-9 w-16 border border-base-200 bg-base-0 px-2 font-sans text-body tabular-nums text-base-800 outline-none focus:border-accent"
-          />
-          {(floorMin !== floorBounds.min || floorMax !== floorBounds.max) && (
-            <button
-              type="button"
-              onClick={() => {
-                setFloorMin(floorBounds.min);
-                setFloorMax(floorBounds.max);
-              }}
-              className="ml-1 font-sans text-small text-base-600 hover:text-base-800"
-              title="Сбросить"
-            >
-              ×
-            </button>
-          )}
-        </div>
       </div>
 
-      {/* Bottom-right — disabled infrastructure toggle + 3D-tour. z-30 above SVG. */}
+      {/* Bottom-right — disabled infrastructure toggle + 3D-tour. */}
       <div className="absolute bottom-10 right-10 z-30">
         <div className="flex items-center gap-3">
           <div
