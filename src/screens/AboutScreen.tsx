@@ -1,7 +1,12 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
+import { PlanImage } from "@/components/PlanImage";
 import { useParallax } from "@/lib/useParallax";
+import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
+import { apartmentPlanUrl } from "@/lib/plans";
+import type { Apartment, RoomType } from "@/data/types";
 import {
   IconClose,
   IconArrowRight,
@@ -73,10 +78,11 @@ function Heading({
   className?: string;
   dark?: boolean;
 }) {
+  // 56px UPPERCASE — Onest semibold mimics RF Dewi Expanded better than Unbounded.
   return (
     <Reveal mode="up">
       <h2
-        className={`font-display text-[88px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] ${dark ? "text-base-0" : "text-base-800"} ${className}`}
+        className={`font-sans text-[56px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] ${dark ? "text-base-0" : "text-base-800"} ${className}`}
       >
         {children}
       </h2>
@@ -171,7 +177,7 @@ function Hero() {
       <div className="grid grid-cols-2 gap-16">
         <div>
           <Reveal mode="up">
-            <h1 className="font-display text-[96px] font-semibold uppercase leading-[0.95] tracking-[-0.02em] text-base-800">
+            <h1 className="font-sans text-[64px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
               Премиальный
               <br />
               дом МАСТЕРС
@@ -497,6 +503,42 @@ function SpecialFormats() {
 
 function Layouts() {
   const nav = useNavigate();
+  const house = getHouse();
+  const allApartments = useMemo<Apartment[]>(
+    () => house.sections.flatMap((s) => Object.values(s.apartmentsByFloor).flat()),
+    [house],
+  );
+
+  // First room type that exists in the feed becomes the initial selection.
+  const availableRoomTypes = useMemo(() => {
+    return ROOM_TYPES.filter((rt) =>
+      allApartments.some((a) => a.roomType === rt.key),
+    );
+  }, [allApartments]);
+
+  const [room, setRoom] = useState<RoomType>(availableRoomTypes[0]?.key ?? "1");
+
+  // Sample apartment of selected room type — used to render plan + ranges.
+  const matching = useMemo(
+    () => allApartments.filter((a) => a.roomType === room),
+    [allApartments, room],
+  );
+  const sample = matching[0];
+
+  const range = (vals: number[]) => {
+    if (vals.length === 0) return [0, 0] as [number, number];
+    return [Math.min(...vals), Math.max(...vals)] as [number, number];
+  };
+  const [minArea, maxArea] = range(matching.map((a) => a.area));
+  const [minPrice, maxPrice] = range(matching.map((a) => a.price));
+  const headingMap: Record<RoomType, string> = {
+    studio: "студий",
+    "1": "1-комн. квартир",
+    "2": "2-комн. квартир",
+    "3": "3-комн. квартир",
+    "4+": "4-комн. квартир и более",
+  };
+
   return (
     <section className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[1fr_1.2fr] gap-16">
@@ -504,95 +546,143 @@ function Layouts() {
           <Reveal mode="up">
             <SectionLabel>Планировки</SectionLabel>
           </Reveal>
-          <Heading className="mt-6">
-            Удобные
-            <br />
-            планировки
-          </Heading>
+          <Heading className="mt-6">Планировки</Heading>
 
           <Reveal mode="up" delay={200}>
             <div className="mt-10 flex flex-wrap gap-2">
-              {["Студия", "1", "2", "3", "4+"].map((label, i) => (
-                <Pressable
-                  key={label}
-                  rippleColor="rgba(0,0,0,0.08)"
-                  className={`h-12 px-5 font-sans text-body font-medium transition-colors ${i === 2 ? "bg-night-500 text-base-0" : "border border-base-200 bg-base-0 text-base-800"}`}
-                >
-                  {label}
-                </Pressable>
-              ))}
+              {availableRoomTypes.map((rt) => {
+                const active = rt.key === room;
+                return (
+                  <Pressable
+                    key={rt.key}
+                    onClick={() => setRoom(rt.key)}
+                    rippleColor={
+                      active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"
+                    }
+                    className={`h-12 px-5 font-sans text-body font-medium transition-colors ${active ? "bg-night-500 text-base-0" : "border border-base-200 bg-base-0 text-base-800"}`}
+                  >
+                    {rt.label}
+                  </Pressable>
+                );
+              })}
             </div>
           </Reveal>
 
           <Reveal mode="up" delay={300}>
             <div className="mt-10">
               <PrimaryButton onClick={() => nav("/catalog")}>
-                Посмотреть все 158 квартир
+                Посмотреть все {allApartments.length} квартир
               </PrimaryButton>
             </div>
           </Reveal>
         </div>
 
         <Reveal mode="right" delay={120}>
-          <div className="bg-night-500 p-8 text-base-0">
-            <div className="flex items-start gap-3">
-              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
-                White Box
-              </span>
-              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
-                Гардеробная
-              </span>
-              <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
-                Ещё +4
-              </span>
+          <div className="grid grid-cols-[1.1fr_1fr] bg-night-500 text-base-0">
+            {/* Plan preview — fills the card height, contained so the whole plan is visible. */}
+            <div className="relative aspect-[3/4] w-full bg-base-0/[0.04]">
+              {sample ? (
+                <PlanImage
+                  src={apartmentPlanUrl(sample)}
+                  alt={`Планировка квартиры №${sample.number}`}
+                  className="absolute inset-0 h-full w-full object-contain p-6"
+                  fallback={
+                    <div className="grid h-full w-full place-items-center font-sans text-small text-base-0/55">
+                      Планировка №{sample.number}
+                    </div>
+                  }
+                />
+              ) : (
+                <div className="grid h-full w-full place-items-center font-sans text-small text-base-0/55">
+                  Нет планировок
+                </div>
+              )}
             </div>
 
-            <div className="mt-10">
-              <p className="font-sans text-small text-base-0/40">20 планировок</p>
-              <h3 className="mt-2 font-display text-[32px] font-semibold uppercase leading-none tracking-[0.02em]">
-                2-комн. квартир
-              </h3>
-            </div>
-
-            <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-base-0/15 pt-6 font-sans text-small">
-              <span className="text-base-0/55">Корпус</span>
-              <span className="text-right">12</span>
-              <span className="text-base-0/55">Секция</span>
-              <span className="text-right">24</span>
-              <span className="text-base-0/55">Этаж</span>
-              <span className="text-right">12/24</span>
-              <span className="text-base-0/55">Сдача</span>
-              <span className="text-right">IV кв 2026</span>
-            </div>
-
-            <div className="mt-8 space-y-2 font-sans text-small">
-              <div className="flex justify-between">
-                <span className="text-base-0/55">Площадь</span>
-                <span>65,2–67,6 м²</span>
+            {/* Details */}
+            <div className="flex flex-col p-8">
+              <div className="flex flex-wrap items-start gap-2">
+                {sample?.features.largeKitchenLivingRoom && (
+                  <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                    Кухня-гостиная
+                  </span>
+                )}
+                {sample?.features.masterBedroom && (
+                  <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                    Мастер-спальня
+                  </span>
+                )}
+                {sample?.decoration && (
+                  <span className="bg-base-0/15 px-2.5 py-1 font-sans text-[12px] font-medium text-base-0">
+                    {sample.decoration}
+                  </span>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-base-0/55">Стоимость</span>
-                <span>36,5–38,3 млн ₽</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-base-0/55">Высота потолков</span>
-                <span>3,0–3,1 м</span>
-              </div>
-            </div>
 
-            <Pressable
-              onClick={() => nav("/catalog")}
-              rippleColor="rgba(255,255,255,0.18)"
-              className="mt-10 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
-            >
-              215 квартир с такой планировкой
-              <IconArrowRight size={18} />
-            </Pressable>
+              <div className="mt-8">
+                <p className="font-sans text-small text-base-0/40">
+                  {matching.length} {pluralize(matching.length, ["планировка", "планировки", "планировок"])}
+                </p>
+                <h3 className="mt-2 font-sans text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
+                  {headingMap[room]}
+                </h3>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-base-0/15 pt-6 font-sans text-small">
+                <span className="text-base-0/55">Корпус</span>
+                <span className="text-right">{house.number}</span>
+                <span className="text-base-0/55">Этажность</span>
+                <span className="text-right">{house.storeysRange}</span>
+                <span className="text-base-0/55">Сдача</span>
+                <span className="text-right">{house.endDate}</span>
+              </div>
+
+              <div className="mt-6 space-y-2 font-sans text-small">
+                <div className="flex justify-between">
+                  <span className="text-base-0/55">Площадь</span>
+                  <span>
+                    {formatArea(minArea)} — {formatArea(maxArea)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-base-0/55">Стоимость</span>
+                  <span>
+                    от {formatPrice(minPrice)} до {formatPrice(maxPrice)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-base-0/55">Высота потолков</span>
+                  <span>3,0–3,1 м</span>
+                </div>
+              </div>
+
+              <Pressable
+                onClick={() => nav("/catalog")}
+                rippleColor="rgba(255,255,255,0.18)"
+                className="mt-auto flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
+              >
+                {matching.length}{" "}
+                {pluralize(matching.length, [
+                  "квартира с такой планировкой",
+                  "квартиры с такой планировкой",
+                  "квартир с такой планировкой",
+                ])}
+                <IconArrowRight size={18} />
+              </Pressable>
+            </div>
           </div>
         </Reveal>
       </div>
     </section>
   );
+}
+
+function pluralize(n: number, forms: [string, string, string]): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
+  return forms[2];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
