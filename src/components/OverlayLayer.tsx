@@ -54,16 +54,19 @@ export function OverlayLayer({
         const enabled = isEnabled ? isEnabled(o) : true;
         const isActive = enabled && highlightId === o.id;
         const isHover = enabled && hoverId === o.id && !isActive;
+        const isHighlighted = isActive || isHover;
         const anchor = computeLabelAnchor(o.points);
         const { primary, secondary } = splitLabel(o.label);
+        const d = pointsToPath(o.points);
 
-        // Three render states:
-        //   active  — clicked / selected: chip in accent + stroke + 32% fill
-        //   hover   — desktop pointer preview: faint stroke only (no chip recolor)
-        //   default — chip visible, polygon completely transparent
-        const fillOpacity = isActive ? 0.32 : 0;
-        const strokeOpacity = isActive ? 1 : isHover ? 0.55 : 0;
-        const strokeWidth = isActive ? 2 : 1.5;
+        // Fill + accent stroke (smooth transitions). White outer stroke is rendered
+        // as a second path underneath so the polygon reads against either light
+        // facades or dark park areas behind the building.
+        const fillOpacity = isActive ? 0.4 : isHover ? 0.22 : 0;
+        const accentStrokeOpacity = isHighlighted ? 1 : 0;
+        const whiteStrokeOpacity = isHighlighted ? 0.85 : 0;
+        const accentStrokeWidth = isActive ? 2.5 : 2;
+        const whiteStrokeWidth = isActive ? 6 : 5;
 
         return (
           <g
@@ -74,30 +77,45 @@ export function OverlayLayer({
             onPointerEnter={() => enabled && setHoverId(o.id)}
             onPointerLeave={() => setHoverId((h) => (h === o.id ? null : h))}
           >
+            {/* White halo — wider, sits below the accent stroke */}
             <path
-              d={pointsToPath(o.points)}
-              fill={o.color}
-              fillOpacity={fillOpacity}
-              stroke={o.color}
-              strokeWidth={strokeWidth}
-              strokeOpacity={strokeOpacity}
+              d={d}
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth={whiteStrokeWidth}
+              strokeOpacity={whiteStrokeOpacity}
+              strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
               style={{
                 transition:
-                  "fill-opacity 220ms ease, stroke-opacity 220ms ease, stroke-width 220ms ease",
+                  "stroke-opacity 300ms ease, stroke-width 300ms ease",
+              }}
+            />
+            {/* Coloured fill + accent stroke on top */}
+            <path
+              d={d}
+              fill={o.color}
+              fillOpacity={fillOpacity}
+              stroke={o.color}
+              strokeWidth={accentStrokeWidth}
+              strokeOpacity={accentStrokeOpacity}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{
+                transition:
+                  "fill-opacity 300ms ease, stroke-opacity 300ms ease, stroke-width 300ms ease",
               }}
             />
 
-            {/* Info chip — recolors only on the activated state, not on hover */}
+            {/* Info chip — single tone always; subtle scale on hover/active. */}
             {showLabels && o.label && (
               <ChipLabel
                 cx={anchor[0]}
                 cy={anchor[1]}
                 primary={primary}
                 secondary={secondary}
-                active={isActive}
+                emphasised={isHighlighted}
                 dimmed={!enabled}
-                accentColor={o.color}
               />
             )}
           </g>
@@ -112,31 +130,35 @@ interface ChipLabelProps {
   cy: number;
   primary: string;
   secondary: string;
-  active: boolean;
+  /** Hovered or activated — chip gets a subtle scale + lift. */
+  emphasised: boolean;
+  /** Filtered out — chip dims. */
   dimmed: boolean;
-  accentColor: string;
 }
 
-function ChipLabel({ cx, cy, primary, secondary, active, dimmed, accentColor }: ChipLabelProps) {
-  // Coordinates are in viewBox space (1920×1080). Chip kept compact and light.
+function ChipLabel({ cx, cy, primary, secondary, emphasised, dimmed }: ChipLabelProps) {
+  // Coordinates are in viewBox space (1920×1080). Chip kept compact and light;
+  // always Imperial Night tone — only scale/opacity respond to state, no colour change.
   const fontPx = 11;
   const charW = fontPx * 0.62;
   const padX = 9;
-  const sepW = secondary ? fontPx * 1.4 : 0; // bullet "•" with gaps
+  const sepW = secondary ? fontPx * 1.4 : 0;
   const w = Math.round(
     primary.length * charW + sepW + secondary.length * charW + padX * 2,
   );
   const h = 22;
 
-  const bg = active ? accentColor : "#19212C";
-  const primaryFill = "#FFFFFF";
-  const secondaryFill = active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.55)";
   const opacity = dimmed ? 0.35 : 1;
+  const scale = emphasised ? 1.08 : 1;
 
   return (
     <g
-      transform={`translate(${cx}, ${cy})`}
-      style={{ transition: "opacity 220ms ease" }}
+      transform={`translate(${cx}, ${cy}) scale(${scale})`}
+      style={{
+        transition: "transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 220ms ease",
+        transformBox: "fill-box",
+        transformOrigin: "center",
+      }}
       opacity={opacity}
     >
       <rect
@@ -145,8 +167,7 @@ function ChipLabel({ cx, cy, primary, secondary, active, dimmed, accentColor }: 
         width={w}
         height={h}
         rx={3}
-        fill={bg}
-        style={{ transition: "fill 220ms ease" }}
+        fill="#19212C"
       />
       <text
         x={0}
@@ -157,13 +178,13 @@ function ChipLabel({ cx, cy, primary, secondary, active, dimmed, accentColor }: 
         letterSpacing="0.08em"
         textAnchor="middle"
       >
-        <tspan fill={primaryFill}>{primary.toUpperCase()}</tspan>
+        <tspan fill="#FFFFFF">{primary.toUpperCase()}</tspan>
         {secondary && (
           <>
-            <tspan dx={sepW * 0.35} fill={secondaryFill}>
+            <tspan dx={sepW * 0.35} fill="rgba(255,255,255,0.55)">
               •
             </tspan>
-            <tspan dx={sepW * 0.35} fill={secondaryFill}>
+            <tspan dx={sepW * 0.35} fill="rgba(255,255,255,0.55)">
               {secondary.toUpperCase()}
             </tspan>
           </>
