@@ -8,9 +8,9 @@ interface OverlayLayerProps {
   /** ViewBox dimensions — must match the coordinate space used in the admin editor. */
   width?: number;
   height?: number;
-  /** Optional click handler — receives the overlay that was clicked. */
+  /** Click/tap handler — receives the overlay that was tapped. */
   onPick?: (o: Overlay) => void;
-  /** Currently highlighted overlay id (e.g., selected section). */
+  /** Currently highlighted (active) overlay id — survives across hover changes. */
   highlightId?: number | null;
   /** Show overlay labels at polygon centroid. */
   showLabels?: boolean;
@@ -52,9 +52,19 @@ export function OverlayLayer({
     >
       {overlays.map((o) => {
         const enabled = isEnabled ? isEnabled(o) : true;
-        const active = enabled && (highlightId === o.id || hoverId === o.id);
+        const isActive = enabled && highlightId === o.id;
+        const isHover = enabled && hoverId === o.id && !isActive;
         const anchor = computeLabelAnchor(o.points);
         const { primary, secondary } = splitLabel(o.label);
+
+        // Three render states:
+        //   active  — clicked / selected: chip in accent + stroke + 32% fill
+        //   hover   — desktop pointer preview: faint stroke only (no chip recolor)
+        //   default — chip visible, polygon completely transparent
+        const fillOpacity = isActive ? 0.32 : 0;
+        const strokeOpacity = isActive ? 1 : isHover ? 0.55 : 0;
+        const strokeWidth = isActive ? 2 : 1.5;
+
         return (
           <g
             key={o.id}
@@ -64,14 +74,13 @@ export function OverlayLayer({
             onPointerEnter={() => enabled && setHoverId(o.id)}
             onPointerLeave={() => setHoverId((h) => (h === o.id ? null : h))}
           >
-            {/* Filled outline — hidden by default, fades in on hover/highlight */}
             <path
               d={pointsToPath(o.points)}
               fill={o.color}
-              fillOpacity={active ? 0.32 : 0}
+              fillOpacity={fillOpacity}
               stroke={o.color}
-              strokeWidth={active ? 2 : 1.5}
-              strokeOpacity={active ? 1 : 0}
+              strokeWidth={strokeWidth}
+              strokeOpacity={strokeOpacity}
               vectorEffect="non-scaling-stroke"
               style={{
                 transition:
@@ -79,15 +88,14 @@ export function OverlayLayer({
               }}
             />
 
-            {/* Always-visible info chip at polygon centroid.
-             * Disabled overlays (e.g. filtered out floors) get dimmed. */}
+            {/* Info chip — recolors only on the activated state, not on hover */}
             {showLabels && o.label && (
               <ChipLabel
                 cx={anchor[0]}
                 cy={anchor[1]}
                 primary={primary}
                 secondary={secondary}
-                active={active}
+                active={isActive}
                 dimmed={!enabled}
                 accentColor={o.color}
               />
@@ -180,7 +188,7 @@ function pointsToPath(points: [number, number][]): string {
  *   X — horizontal mean of all points (visual centre of the polygon).
  *   Y — interpolation between top and bottom; 0.5 = middle.
  */
-const ANCHOR_BIAS = 0.65; // 0 = top, 1 = bottom
+const ANCHOR_BIAS = 0.25; // 0 = top, 1 = bottom — chips sit near building tops
 
 function computeLabelAnchor(points: [number, number][]): [number, number] {
   if (points.length === 0) return [0, 0];

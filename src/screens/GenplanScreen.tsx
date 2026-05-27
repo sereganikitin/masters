@@ -27,7 +27,6 @@ export function GenplanScreen() {
   const [activeNum, setActiveNum] = useState<number | null>(null);
   const [rooms, setRooms] = useState<Set<RoomType>>(new Set());
 
-  // Global floor bounds across the building, used as slider defaults.
   const floorBounds = useMemo(() => {
     const all = house.sections.flatMap((s) =>
       Object.keys(s.apartmentsByFloor).map(Number),
@@ -40,7 +39,6 @@ export function GenplanScreen() {
   const [floorMin, setFloorMin] = useState<number>(floorBounds.min);
   const [floorMax, setFloorMax] = useState<number>(floorBounds.max);
 
-  // Helper — does a section have apartments matching the current filters?
   const sectionMatches = (sectionNumber: number): boolean => {
     const section = house.sections.find((s) => s.number === sectionNumber);
     if (!section) return false;
@@ -80,6 +78,18 @@ export function GenplanScreen() {
     nav(`/catalog?${params.toString()}`);
   };
 
+  // Two-tap pattern:
+  //   1st tap on a section  → activate it (show panel + bold outline)
+  //   2nd tap on the same   → open catalog filtered by that section
+  //   tap on another        → switch active section
+  const handleSectionTap = (sectionNumber: number) => {
+    if (activeNum === sectionNumber) {
+      openCatalog(sectionNumber);
+    } else {
+      setActiveNum(sectionNumber);
+    }
+  };
+
   const toggleRoom = (rt: RoomType) =>
     setRooms((prev) => {
       const next = new Set(prev);
@@ -98,14 +108,14 @@ export function GenplanScreen() {
 
       <OverlayChrome />
 
-      {/* Admin-drawn overlays — filtered */}
+      {/* Admin-drawn overlays */}
       <OverlayLayer
         scope="genplan"
         highlightId={activeOverlayId}
         isEnabled={isOverlayEnabled}
         onPick={(o) => {
           const num = Number(o.entityId);
-          if (!Number.isNaN(num)) setActiveNum(num);
+          if (!Number.isNaN(num)) handleSectionTap(num);
         }}
       />
 
@@ -126,7 +136,7 @@ export function GenplanScreen() {
               >
                 <Pressable
                   disabled={!enabled}
-                  onClick={() => enabled && setActiveNum(s.number)}
+                  onClick={() => enabled && handleSectionTap(s.number)}
                   rippleColor={isActive ? "rgba(255,255,255,0.3)" : "rgba(0,97,166,0.2)"}
                   className={`px-3 py-1.5 font-display text-[12px] font-semibold uppercase tracking-[0.15em] backdrop-blur-md transition-opacity ${
                     !enabled
@@ -150,7 +160,6 @@ export function GenplanScreen() {
         delay={300}
         className="absolute bottom-10 left-10 z-10 flex flex-col gap-3"
       >
-        {/* Room type chips */}
         <div className="flex flex-wrap items-center gap-2">
           {ROOM_TYPES.map((rt) => {
             const active = rooms.has(rt.key);
@@ -171,7 +180,6 @@ export function GenplanScreen() {
           })}
         </div>
 
-        {/* Floor range */}
         <div className="flex items-center gap-2 bg-base-0/95 px-4 py-2 backdrop-blur-md">
           <span className="font-sans text-small font-medium uppercase tracking-[0.15em] text-base-600">
             Этаж
@@ -238,7 +246,7 @@ export function GenplanScreen() {
         </div>
       </Reveal>
 
-      {/* Section detail panel — visible only when a section is picked */}
+      {/* Section detail panel — visible when a section is activated */}
       {active && (
         <SectionPanel
           section={active}
@@ -270,7 +278,6 @@ function SectionPanel({ section, rooms, floorMin, floorMax, onOpenSection }: Pan
     "4+": "4-комн. и более",
   };
 
-  // Count matching apartments by room type, applying both filters.
   const filteredByRoom = useMemo(() => {
     const result: Record<string, { count: number; minPrice: number; minArea: number }> = {};
     for (const rt of ROOM_TYPES) {
@@ -299,7 +306,7 @@ function SectionPanel({ section, rooms, floorMin, floorMax, onOpenSection }: Pan
   return (
     <Reveal
       mode="left"
-      delay={250}
+      delay={150}
       key={section.id}
       className="absolute right-10 top-1/2 z-10 w-[480px] -translate-y-1/2"
     >
@@ -350,6 +357,10 @@ function SectionPanel({ section, rooms, floorMin, floorMax, onOpenSection }: Pan
           </span>
           <IconArrowRight size={20} />
         </Pressable>
+
+        <p className="mt-3 text-center font-sans text-[11px] text-base-600">
+          Тапните по секции ещё раз, чтобы перейти к выбору квартир
+        </p>
       </div>
     </Reveal>
   );
