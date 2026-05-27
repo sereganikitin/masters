@@ -23,8 +23,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Unbounded'", "system-ui", "sans-serif"],
-        sans: ["'Onest'", "system-ui", "sans-serif"],
+        display: ["'RF Dewi Extended'", "system-ui", "sans-serif"],
+        displayExpanded: ["'RF Dewi Expanded'", "'RF Dewi Extended'", "system-ui", "sans-serif"],
+        sans: ["'Graphik LC Web'", "system-ui", "sans-serif"],
       },
       fontSize: {
         h1: ["64px", { lineHeight: "1.1", letterSpacing: "-0.02em" }],

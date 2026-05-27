@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Graphik LC Web — body text */
+@font-face {
+  font-family: "Graphik LC Web";
+  src: url("/fonts/GraphikLCWeb-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Graphik LC Web";
+  src: url("/fonts/GraphikLCWeb-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Graphik LC Web";
+  src: url("/fonts/GraphikLCWeb-Semibold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Graphik LC Web";
+  src: url("/fonts/GraphikLCWeb-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* RF Dewi Extended — default display (headings, labels) */
+@font-face {
+  font-family: "RF Dewi Extended";
+  src: url("/fonts/RFDewiExtended-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Extended";
+  src: url("/fonts/RFDewiExtended-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* RF Dewi Expanded Ultrabold — only for very large hero titles */
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Ultrabold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -15,7 +70,7 @@
 
   body {
     margin: 0;
-    font-family: "Onest", system-ui, sans-serif;
+    font-family: "Graphik LC Web", system-ui, sans-serif;
     color: theme("colors.base.800");
     background: theme("colors.base.0");
     -webkit-font-smoothing: antialiased;
