@@ -509,14 +509,17 @@ function Layouts() {
     [house],
   );
 
-  // First room type that exists in the feed becomes the initial selection.
-  const availableRoomTypes = useMemo(() => {
-    return ROOM_TYPES.filter((rt) =>
-      allApartments.some((a) => a.roomType === rt.key),
-    );
+  // Show ALL room types in the filter; disable those that have no matching apartments
+  // in the feed (they'll come online later).
+  const roomCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const a of allApartments) map[a.roomType] = (map[a.roomType] ?? 0) + 1;
+    return map;
   }, [allApartments]);
 
-  const [room, setRoom] = useState<RoomType>(availableRoomTypes[0]?.key ?? "1");
+  // Initial selection — first available type, falls back to first listed.
+  const firstAvailable = ROOM_TYPES.find((rt) => (roomCounts[rt.key] ?? 0) > 0);
+  const [room, setRoom] = useState<RoomType>(firstAvailable?.key ?? "1");
 
   // Sample apartment of selected room type — used to render plan + ranges.
   const matching = useMemo(
@@ -546,20 +549,34 @@ function Layouts() {
           <Reveal mode="up">
             <SectionLabel>Планировки</SectionLabel>
           </Reveal>
-          <Heading className="mt-6">Планировки</Heading>
+          <Heading className="mt-6">
+            Удобные
+            <br />
+            планировки
+          </Heading>
 
           <Reveal mode="up" delay={200}>
             <div className="mt-10 flex flex-wrap gap-2">
-              {availableRoomTypes.map((rt) => {
-                const active = rt.key === room;
+              {ROOM_TYPES.map((rt) => {
+                const count = roomCounts[rt.key] ?? 0;
+                const disabled = count === 0;
+                const active = rt.key === room && !disabled;
                 return (
                   <Pressable
                     key={rt.key}
-                    onClick={() => setRoom(rt.key)}
+                    disabled={disabled}
+                    onClick={() => !disabled && setRoom(rt.key)}
                     rippleColor={
                       active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"
                     }
-                    className={`h-12 px-5 font-sans text-body font-medium transition-colors ${active ? "bg-night-500 text-base-0" : "border border-base-200 bg-base-0 text-base-800"}`}
+                    className={`h-12 px-5 font-sans text-body font-medium transition-colors ${
+                      disabled
+                        ? "cursor-not-allowed border border-base-200 bg-base-0 text-base-200"
+                        : active
+                          ? "bg-night-500 text-base-0"
+                          : "border border-base-200 bg-base-0 text-base-800"
+                    }`}
+                    title={disabled ? "Нет квартир этого типа" : undefined}
                   >
                     {rt.label}
                   </Pressable>
@@ -815,31 +832,33 @@ function Construction() {
 function Office() {
   return (
     <section className={`${PAGE_PAD} py-24`}>
-      <div className="relative h-[520px] w-full overflow-hidden bg-night-500">
+      <div className="relative h-[560px] w-full overflow-hidden bg-base-100">
+        {/* Map background — already has the office marker baked in per Figma asset */}
         <img
-          src="/images/about/office.png"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-80"
+          src="/images/about/office-map.png"
+          alt="Карта офиса продаж"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-night-500 via-night-500/70 to-transparent" />
+        {/* Soft gradient to keep the left-side copy readable over the map */}
+        <div className="absolute inset-0 bg-gradient-to-r from-base-0 via-base-0/80 to-transparent" />
 
-        <div className="relative z-10 grid h-full grid-cols-2 px-16 py-14 text-base-0">
+        <div className="relative z-10 grid h-full grid-cols-2 px-16 py-14 text-base-800">
           <div className="flex flex-col justify-center">
             <Reveal mode="up">
-              <SectionLabelDark>Офис продаж</SectionLabelDark>
+              <SectionLabel>Офис продаж</SectionLabel>
             </Reveal>
-            <Heading dark className="mt-6">
+            <Heading className="mt-6">
               Офис продаж
               <br />
               «Мастерс»
             </Heading>
             <Reveal mode="up" delay={180}>
-              <p className="mt-8 font-sans text-h5 text-base-0/85">
+              <p className="mt-8 font-sans text-h5 text-base-700">
                 г. Москва, Проезд Аэропорта, 8
               </p>
             </Reveal>
             <Reveal mode="up" delay={260}>
-              <div className="mt-3 flex items-center gap-3 font-sans text-h5 text-base-0/85">
+              <div className="mt-3 flex items-center gap-3 font-sans text-h5 text-base-700">
                 <IconPhone size={20} />
                 <span>+7 (495) 021-11-11</span>
               </div>
@@ -866,22 +885,26 @@ function Office() {
 function Documents() {
   return (
     <section className={`${PAGE_PAD} py-24`}>
-      <div className="grid grid-cols-[1fr_auto] items-center gap-16 border-t border-base-200 pt-16">
-        <div>
-          <Reveal mode="up">
-            <SectionLabel>Документы</SectionLabel>
-          </Reveal>
+      <div className="border-t border-base-200 pt-16">
+        <Reveal mode="up">
+          <SectionLabel>Документы</SectionLabel>
+        </Reveal>
+        <Heading className="mt-6">Документация</Heading>
+
+        <div className="mt-12 grid grid-cols-[1.4fr_auto] items-end gap-16">
           <Reveal mode="up" delay={120}>
-            <p className="mt-6 max-w-[860px] font-sans text-h5 leading-relaxed text-base-800">
+            <p className="max-w-[960px] font-sans text-h5 leading-relaxed text-base-800">
               Вся проектная документация доступна на официальном портале ДОМ.РФ.
               Здесь вы найдёте актуальные планы, разрешения, проектные декларации и
-              другие официальные материалы для детального изучения.
+              другие официальные материалы для детального изучения проекта.
+              Сведения обновляются по мере прохождения этапов строительства и
+              согласований.
             </p>
           </Reveal>
+          <Reveal mode="up" delay={200}>
+            <PrimaryButton>Изучить документы</PrimaryButton>
+          </Reveal>
         </div>
-        <Reveal mode="up" delay={200}>
-          <PrimaryButton>Изучить документы</PrimaryButton>
-        </Reveal>
       </div>
     </section>
   );
