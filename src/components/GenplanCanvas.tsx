@@ -56,8 +56,10 @@ interface GenplanCanvasProps {
   showPOI?: boolean;
   /** Optional manual label position overrides keyed by entityId. */
   labelOffsets?: Record<string, [number, number]>;
-  /** Shift section chips (dark) vertically in viewBox px. */
+  /** Shift section chips (dark) vertically in viewBox px (uniform offset). */
   sectionsOffsetY?: number;
+  /** Per-section manual nudges, keyed by section number (1..11). [dx, dy] in viewBox px. */
+  sectionOffsets?: Record<number, [number, number]>;
   /** Shift POI chips (light) vertically in viewBox px. */
   poiOffsetY?: number;
 }
@@ -76,6 +78,7 @@ export function GenplanCanvas({
   showPOI = false,
   labelOffsets,
   sectionsOffsetY = 0,
+  sectionOffsets,
   poiOffsetY = 0,
 }: GenplanCanvasProps) {
   const house = getHouse();
@@ -133,8 +136,9 @@ export function GenplanCanvas({
             if (!pos) return null;
             const count = countOf(num);
             const isActive = activeSection === num;
-            const xPct = (pos.x / 1920) * 100;
-            const yPct = ((pos.y + sectionsOffsetY) / 1080) * 100;
+            const nudge = sectionOffsets?.[num] ?? [0, 0];
+            const xPct = ((pos.x + nudge[0]) / 1920) * 100;
+            const yPct = ((pos.y + sectionsOffsetY + nudge[1]) / 1080) * 100;
             return (
               <Reveal
                 key={num}

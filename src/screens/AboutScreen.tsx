@@ -284,6 +284,18 @@ function Genplan() {
           showPOI
           sectionsOffsetY={150}
           poiOffsetY={50}
+          sectionOffsets={{
+            1: [100, 0],
+            3: [30, 0],
+            4: [70, 0],
+            5: [150, 0],
+            6: [-50, 0],
+            7: [-100, 0],
+            8: [-100, 0],
+            9: [-100, 0],
+            10: [-50, 0],
+            11: [0, -100],
+          }}
         />
 
         {/* Bottom CTA — full kiosk view */}
