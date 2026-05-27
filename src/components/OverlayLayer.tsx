@@ -17,6 +17,10 @@ interface OverlayLayerProps {
   /** Optional predicate. When provided, overlays for which it returns false
    * are rendered dimmed and aren't clickable. */
   isEnabled?: (o: Overlay) => boolean;
+  /** Per-entity manual nudge for the chip position, in viewBox units.
+   * Useful when a polygon's geometric centre doesn't read as the visual centre
+   * (e.g. building facing at an angle). Keyed by entityId. */
+  labelOffsets?: Record<string, [number, number]>;
 }
 
 /**
@@ -38,6 +42,7 @@ export function OverlayLayer({
   highlightId = null,
   showLabels = true,
   isEnabled,
+  labelOffsets,
 }: OverlayLayerProps) {
   const { overlays } = useOverlays(scope, scopeKey);
   const [hoverId, setHoverId] = useState<number | null>(null);
@@ -63,7 +68,11 @@ export function OverlayLayer({
         const isActive = enabled && highlightId === o.id;
         const isHover = enabled && hoverId === o.id && !isActive;
         const isHighlighted = isActive || isHover;
-        const anchor = computeLabelAnchor(o.points);
+        const baseAnchor = computeLabelAnchor(o.points);
+        const off = labelOffsets?.[o.entityId];
+        const anchor: [number, number] = off
+          ? [baseAnchor[0] + off[0], baseAnchor[1] + off[1]]
+          : baseAnchor;
         const { primary, secondary } = splitLabel(o.label);
         const d = pointsToPath(o.points);
 

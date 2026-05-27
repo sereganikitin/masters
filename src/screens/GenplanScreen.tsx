@@ -55,7 +55,7 @@ export function GenplanScreen() {
     [house, activeNum],
   );
 
-  const { overlays: sectionOverlays } = useOverlays("genplan", "");
+  const { overlays: sectionOverlays, loading: overlaysLoading } = useOverlays("genplan", "");
   const activeOverlayId = useMemo(() => {
     if (active == null) return null;
     const m = sectionOverlays.find((o) => Number(o.entityId) === active.number);
@@ -113,14 +113,17 @@ export function GenplanScreen() {
         scope="genplan"
         highlightId={activeOverlayId}
         isEnabled={isOverlayEnabled}
+        labelOffsets={{ "5": [40, 0] }}
         onPick={(o) => {
           const num = Number(o.entityId);
           if (!Number.isNaN(num)) handleSectionTap(num);
         }}
       />
 
-      {/* Static fallback markers — only when no overlays defined */}
-      {sectionOverlays.length === 0 && (
+      {/* Static fallback markers — only when API replied AND there are no overlays.
+        * Holding back render until !overlaysLoading avoids the brief flash of
+        * light-themed chips before the dark admin chips appear. */}
+      {!overlaysLoading && sectionOverlays.length === 0 && (
         <div className="absolute inset-0">
           {house.sections.map((s, i) => {
             const pos = MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
@@ -137,16 +140,17 @@ export function GenplanScreen() {
                 <Pressable
                   disabled={!enabled}
                   onClick={() => enabled && handleSectionTap(s.number)}
-                  rippleColor={isActive ? "rgba(255,255,255,0.3)" : "rgba(0,97,166,0.2)"}
-                  className={`px-3 py-1.5 font-display text-[12px] font-semibold uppercase tracking-[0.15em] backdrop-blur-md transition-opacity ${
+                  rippleColor={isActive ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.18)"}
+                  className={`flex items-center gap-[6px] px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] backdrop-blur-md transition-all ${
                     !enabled
-                      ? "bg-base-0/30 text-base-0/40"
-                      : isActive
-                        ? "bg-accent text-base-0 shadow-card"
-                        : "bg-base-0/85 text-base-800"
-                  }`}
+                      ? "bg-night-500/40 text-base-0/40"
+                      : "bg-night-500/95 text-base-0"
+                  } ${isActive ? "scale-[1.08]" : ""}`}
+                  style={{ height: 22, borderRadius: 3 }}
                 >
-                  {s.number} секция · {s.apartmentCount} кв.
+                  <span>{s.number} СЕКЦИЯ</span>
+                  <span className="text-base-0/55">•</span>
+                  <span className="text-base-0/55">{s.apartmentCount} КВ.</span>
                 </Pressable>
               </Reveal>
             );

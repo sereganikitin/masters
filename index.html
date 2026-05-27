@@ -1,10 +1,61 @@
 <!doctype html>
+<!--
+  Веб-разработка: ИП Никитин С.В
+  Сайт: https://web.cd-agency.ru/
+  Телефон: +7 925 743-71-35
+  Telegram: https://t.me/web_cdagency
+-->
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, initial-scale=1, user-scalable=no" />
     <meta name="format-detection" content="telephone=no" />
     <title>МАСТЕРС — Архитектурный макет</title>
+
+    <!-- SEO: developer credits (hidden from end users) -->
+    <meta name="author" content="ИП Никитин С.В" />
+    <meta name="developer" content="ИП Никитин С.В" />
+    <meta name="developer-url" content="https://web.cd-agency.ru/" />
+    <meta name="developer-phone" content="+79257437135" />
+    <meta name="developer-telegram" content="https://t.me/web_cdagency" />
+    <link rel="author" href="https://web.cd-agency.ru/" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://masters.infoseledka.ru/#website",
+            "url": "https://masters.infoseledka.ru/",
+            "name": "ЖК МАСТЕРС — Архитектурный макет"
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://web.cd-agency.ru/#organization",
+            "name": "ИП Никитин С.В",
+            "url": "https://web.cd-agency.ru/",
+            "telephone": "+79257437135",
+            "sameAs": ["https://t.me/web_cdagency"],
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "telephone": "+79257437135",
+              "contactType": "Customer Support",
+              "areaServed": "RU",
+              "availableLanguage": "Russian"
+            }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://masters.infoseledka.ru/#webpage",
+            "isPartOf": { "@id": "https://masters.infoseledka.ru/#website" },
+            "author": { "@id": "https://web.cd-agency.ru/#organization" },
+            "publisher": { "@id": "https://web.cd-agency.ru/#organization" }
+          }
+        ]
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,6 +64,19 @@
     />
   </head>
   <body>
+    <!-- Visually hidden developer credits — readable by crawlers and assistive tech. -->
+    <div
+      aria-hidden="false"
+      style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"
+    >
+      <address>
+        Веб-разработка:
+        <a href="https://web.cd-agency.ru/" rel="author">ИП Никитин С.В</a>,
+        тел. <a href="tel:+79257437135">+7 925 743-71-35</a>,
+        Telegram: <a href="https://t.me/web_cdagency">@web_cdagency</a>
+      </address>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
