@@ -68,15 +68,16 @@ export function OverlayLayer({
         const d = pointsToPath(o.points);
 
         // White outer contour. Active stroke is twice the hover stroke.
-        const hoverStroke = 3;
+        const hoverStroke = 1.5;
         const activeStroke = hoverStroke * 2;
         const strokeWidth = isActive ? activeStroke : hoverStroke;
         const strokeOpacity = isHighlighted ? 1 : 0;
 
-        // Inner glow — wide blurred coloured stroke clipped to the polygon. Sits
-        // at the edges, fades inward → looks like a soft gradient from the rim.
-        const glowOpacity = isActive ? 0.55 : isHover ? 0.35 : 0;
-        const glowRadius = isActive ? 70 : 50;
+        // Hover  → soft inner glow (gradient from the rim).
+        // Active → flat coloured fill across the whole polygon (no glow).
+        const glowOpacity = isHover ? 0.35 : 0;
+        const glowRadius = 50;
+        const fillOpacity = isActive ? 0.32 : 0;
 
         return (
           <g
@@ -87,10 +88,18 @@ export function OverlayLayer({
             onPointerEnter={() => enabled && setHoverId(o.id)}
             onPointerLeave={() => setHoverId((h) => (h === o.id ? null : h))}
           >
-            {/* Invisible hitbox so taps register even before the outline appears */}
-            <path d={d} fill="rgba(0,0,0,0.001)" />
+            {/* Hitbox + active flat fill — same path, fade-in opacity on activation */}
+            <path
+              d={d}
+              fill={o.color}
+              fillOpacity={fillOpacity}
+              stroke="none"
+              style={{
+                transition: "fill-opacity 280ms ease",
+              }}
+            />
 
-            {/* Inner glow — coloured blurred stroke clipped to the polygon */}
+            {/* Inner glow — coloured blurred stroke clipped to the polygon (hover only) */}
             <g clipPath={`url(#overlay-clip-${o.id})`} style={{ pointerEvents: "none" }}>
               <path
                 d={d}
