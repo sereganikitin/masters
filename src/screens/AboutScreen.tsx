@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
-import { OverlayLayer } from "@/components/OverlayLayer";
-import { useOverlays } from "@/lib/useOverlays";
+import { GenplanCanvas } from "@/components/GenplanCanvas";
 import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
@@ -14,17 +13,6 @@ import {
   IconPhone,
   IconPlay,
 } from "@/components/Icon";
-
-// Mirror the static fallback positions from GenplanScreen so the embed looks
-// identical when admin hasn't drawn overlays yet.
-const GENPLAN_MARKERS: Record<number, { x: number; y: number }> = {
-  1: { x: 540, y: 360 },
-  2: { x: 820, y: 520 },
-  3: { x: 980, y: 380 },
-  4: { x: 1180, y: 260 },
-  5: { x: 1300, y: 460 },
-  6: { x: 1080, y: 620 },
-};
 
 // About page modelled on cg-projects.ru/about. Verbatim copy & section flow
 // per Figma frame 14057:31658. All section titles are huge UPPERCASE.
@@ -278,83 +266,23 @@ function CtaTile({
 
 function Genplan() {
   const nav = useNavigate();
-  const house = getHouse();
-  const { overlays, loading } = useOverlays("genplan", "");
-
-  // Single-tap on a section → catalog filtered by that section.
-  const openSection = (sectionNumber: number) => {
-    nav(`/catalog?section=${sectionNumber}`);
-  };
-
   return (
     <section className="relative w-full bg-night-500 text-base-0">
       <div className={`${PAGE_PAD} pb-16 pt-24`}>
         <Heading dark>Генплан проекта</Heading>
       </div>
 
-      {/* Live genplan canvas — same aerial + admin overlays as /genplan, but with
-        * single-tap navigation straight to the catalog (no intermediate panel). */}
+      {/* Same aerial + section chips as the interactive /genplan, but here
+        * sections are NOT clickable and admin overlays are NOT shown.
+        * Surrounding POI labels (Викторенко, Авиапарк, школа, парк…) are added. */}
       <div
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: "1920 / 900" }}
+        style={{ aspectRatio: "1920 / 1080" }}
       >
-        <img
-          src="/images/hero-genplan.png"
-          alt="Генплан комплекса"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
-
-        {/* Admin-drawn overlays — same as on /genplan */}
-        <OverlayLayer
-          scope="genplan"
-          labelOffsets={{ "5": [40, 0] }}
-          onPick={(o) => {
-            const num = Number(o.entityId);
-            if (!Number.isNaN(num)) openSection(num);
-          }}
-        />
-
-        {/* Static fallback section chips — only when API replied with no overlays */}
-        {!loading && overlays.length === 0 && (
-          <div className="absolute inset-0">
-            {house.sections.map((s, i) => {
-              const pos =
-                GENPLAN_MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
-              // Convert pixel positions (designed for 1920×900 scene) to percent so
-              // the embed scales correctly with the responsive aspect-ratio box.
-              const xPct = (pos.x / 1920) * 100;
-              const yPct = (pos.y / 900) * 100;
-              return (
-                <Reveal
-                  key={s.id}
-                  mode="zoom"
-                  delay={i * 60}
-                  className="absolute"
-                  style={{
-                    left: `${xPct}%`,
-                    top: `${yPct}%`,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                >
-                  <Pressable
-                    onClick={() => openSection(s.number)}
-                    rippleColor="rgba(255,255,255,0.18)"
-                    className="flex items-center gap-[6px] bg-night-500/95 px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-base-0 backdrop-blur-md"
-                    style={{ height: 22, borderRadius: 3 }}
-                  >
-                    <span>{s.number} СЕКЦИЯ</span>
-                    <span className="text-base-0/55">•</span>
-                    <span className="text-base-0/55">{s.apartmentCount} КВ.</span>
-                  </Pressable>
-                </Reveal>
-              );
-            })}
-          </div>
-        )}
+        <GenplanCanvas showOverlays={false} showPOI />
 
         {/* Bottom CTA — full kiosk view */}
-        <div className="absolute bottom-10 right-10">
+        <div className="absolute bottom-10 right-10 z-20">
           <PrimaryButton onClick={() => nav("/genplan")}>
             Открыть полный генплан
           </PrimaryButton>
