@@ -137,7 +137,15 @@ export function CatalogScreen() {
     <div className="relative h-full w-full bg-base-100 text-base-800">
       {/* Close */}
       <Pressable
-        onClick={() => nav("/")}
+        onClick={() => {
+          // Return to wherever we came from (Genplan / Hero / etc).
+          // Falls back to Hero if there's no history (direct entry).
+          if (window.history.length > 1) {
+            nav(-1);
+          } else {
+            nav("/");
+          }
+        }}
         rippleColor="rgba(0,0,0,0.12)"
         className="absolute right-9 top-9 z-50 grid h-14 w-14 place-items-center rounded-full bg-base-0 text-base-800 shadow-card"
         aria-label="Закрыть"
