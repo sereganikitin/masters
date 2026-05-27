@@ -47,19 +47,6 @@
 }
 
 @layer components {
-  /* Kiosk stage: fixed 1920x1080 surface, scaled via JS to viewport.
-   * Transform/position is set by useStageScale; we only set sizing + origin here. */
-  .stage {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1920px;
-    height: 1080px;
-    transform-origin: top left;
-    overflow: hidden;
-    will-change: transform;
-  }
-
   /* Touch surface: brief press scale + brightness shift, with relative+overflow so
    * ripple children stay inside the bounds. */
   .tap-surface {

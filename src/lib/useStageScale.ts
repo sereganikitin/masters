@@ -3,6 +3,12 @@ import { useEffect, useRef } from "react";
 const STAGE_W = 1920;
 const STAGE_H = 1080;
 
+/**
+ * Scales the kiosk stage to fill the viewport width (never less, never more).
+ * Vertical overflow is intentional — the outer container scrolls so kiosks with
+ * a shorter viewport (1920×900 laptops in browser) can still reach the bottom
+ * UI controls. On the actual 1920×1080 kiosk the scale lands at exactly 1.
+ */
 export function useStageScale<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
 
@@ -11,14 +17,16 @@ export function useStageScale<T extends HTMLElement>() {
     if (!el) return;
 
     const apply = () => {
-      const scaleX = window.innerWidth / STAGE_W;
-      const scaleY = window.innerHeight / STAGE_H;
-      // Cover: pick the larger scale so the stage always fills the viewport on both
-      // axes. The shorter axis overflows slightly; outer container clips it.
-      const scale = Math.max(scaleX, scaleY);
-      const offsetX = (window.innerWidth - STAGE_W * scale) / 2;
-      const offsetY = (window.innerHeight - STAGE_H * scale) / 2;
-      el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      const scale = window.innerWidth / STAGE_W;
+      el.style.transform = `scale(${scale})`;
+      // Reserve enough vertical space in the document for the scaled stage so
+      // the outer container can scroll when the viewport is shorter than scaled H.
+      el.style.height = `${STAGE_H}px`;
+      el.style.width = `${STAGE_W}px`;
+      const parent = el.parentElement;
+      if (parent) {
+        parent.style.minHeight = `${STAGE_H * scale}px`;
+      }
     };
 
     apply();
