@@ -17,6 +17,9 @@ interface OverlayLayerProps {
   /** Optional predicate. When provided, overlays for which it returns false
    * are rendered dimmed and aren't clickable. */
   isEnabled?: (o: Overlay) => boolean;
+  /** Optional predicate. When provided, overlays for which it returns false
+   * are not rendered at all (hard hide vs. soft dim from `isEnabled`). */
+  isVisible?: (o: Overlay) => boolean;
   /** Per-entity manual nudge for the chip position, in viewBox units.
    * Useful when a polygon's geometric centre doesn't read as the visual centre
    * (e.g. building facing at an angle). Keyed by entityId. */
@@ -42,9 +45,11 @@ export function OverlayLayer({
   highlightId = null,
   showLabels = true,
   isEnabled,
+  isVisible,
   labelOffsets,
 }: OverlayLayerProps) {
-  const { overlays } = useOverlays(scope, scopeKey);
+  const { overlays: rawOverlays } = useOverlays(scope, scopeKey);
+  const overlays = isVisible ? rawOverlays.filter(isVisible) : rawOverlays;
   const [hoverId, setHoverId] = useState<number | null>(null);
 
   if (overlays.length === 0) return null;

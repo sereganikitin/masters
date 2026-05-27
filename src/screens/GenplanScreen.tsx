@@ -108,11 +108,11 @@ export function GenplanScreen() {
 
       <OverlayChrome />
 
-      {/* Admin-drawn overlays */}
+      {/* Admin-drawn overlays — sections without matching apartments are hidden */}
       <OverlayLayer
         scope="genplan"
         highlightId={activeOverlayId}
-        isEnabled={isOverlayEnabled}
+        isVisible={isOverlayEnabled}
         labelOffsets={{ "5": [40, 0] }}
         onPick={(o) => {
           const num = Number(o.entityId);
@@ -121,40 +121,37 @@ export function GenplanScreen() {
       />
 
       {/* Static fallback markers — only when API replied AND there are no overlays.
-        * Holding back render until !overlaysLoading avoids the brief flash of
-        * light-themed chips before the dark admin chips appear. */}
+        * Sections without matching apartments are completely hidden. */}
       {!overlaysLoading && sectionOverlays.length === 0 && (
         <div className="absolute inset-0">
-          {house.sections.map((s, i) => {
-            const pos = MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
-            const isActive = active != null && s.number === active.number;
-            const enabled = sectionMatches(s.number);
-            return (
-              <Reveal
-                key={s.id}
-                mode="zoom"
-                delay={i * 80}
-                className="absolute"
-                style={{ left: pos.x, top: pos.y, transform: "translate(-50%, -50%)" }}
-              >
-                <Pressable
-                  disabled={!enabled}
-                  onClick={() => enabled && handleSectionTap(s.number)}
-                  rippleColor={isActive ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.18)"}
-                  className={`flex items-center gap-[6px] px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] backdrop-blur-md transition-all ${
-                    !enabled
-                      ? "bg-night-500/40 text-base-0/40"
-                      : "bg-night-500/95 text-base-0"
-                  } ${isActive ? "scale-[1.08]" : ""}`}
-                  style={{ height: 22, borderRadius: 3 }}
+          {house.sections
+            .filter((s) => sectionMatches(s.number))
+            .map((s, i) => {
+              const pos = MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
+              const isActive = active != null && s.number === active.number;
+              return (
+                <Reveal
+                  key={s.id}
+                  mode="zoom"
+                  delay={i * 80}
+                  className="absolute"
+                  style={{ left: pos.x, top: pos.y, transform: "translate(-50%, -50%)" }}
                 >
-                  <span>{s.number} СЕКЦИЯ</span>
-                  <span className="text-base-0/55">•</span>
-                  <span className="text-base-0/55">{s.apartmentCount} КВ.</span>
-                </Pressable>
-              </Reveal>
-            );
-          })}
+                  <Pressable
+                    onClick={() => handleSectionTap(s.number)}
+                    rippleColor={isActive ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.18)"}
+                    className={`flex items-center gap-[6px] bg-night-500/95 px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-base-0 backdrop-blur-md transition-all ${
+                      isActive ? "scale-[1.08]" : ""
+                    }`}
+                    style={{ height: 22, borderRadius: 3 }}
+                  >
+                    <span>{s.number} СЕКЦИЯ</span>
+                    <span className="text-base-0/55">•</span>
+                    <span className="text-base-0/55">{s.apartmentCount} КВ.</span>
+                  </Pressable>
+                </Reveal>
+              );
+            })}
         </div>
       )}
 
@@ -229,16 +226,25 @@ export function GenplanScreen() {
         </div>
       </Reveal>
 
-      {/* Bottom-right — infrastructure / 3D tour */}
+      {/* Bottom-right — infrastructure toggle (disabled) + 3D-тур */}
       <Reveal mode="up" delay={400} className="absolute bottom-10 right-10 z-10">
         <div className="flex items-center gap-3">
-          <Pressable
-            rippleColor="rgba(0,0,0,0.12)"
+          {/* Disabled toggle — purely decorative for now, will wire up later */}
+          <div
             className="flex h-14 items-center gap-3 bg-base-0/95 px-6 font-sans text-body font-medium text-base-800 backdrop-blur-sm"
+            aria-disabled="true"
+            title="Скоро"
           >
-            <IconMap size={20} />
-            Инфраструктура
-          </Pressable>
+            <IconMap size={20} className="opacity-40" />
+            <span className="opacity-60">Инфраструктура</span>
+            <span
+              className="relative inline-block h-5 w-9 rounded-full bg-base-200"
+              aria-hidden="true"
+            >
+              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-base-0 shadow-card" />
+            </span>
+          </div>
+
           <Pressable
             onClick={() => nav("/tour")}
             rippleColor="rgba(0,0,0,0.12)"
