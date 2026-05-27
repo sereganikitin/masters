@@ -134,26 +134,40 @@ interface PanelProps {
 
 function SectionPanel({ section, onOpenSection }: PanelProps) {
   const house = getHouse();
+  // Per Figma: section panel shows only the room types that actually exist in the feed.
+  // labels are in genitive plural ("Студии", "1-комн.", "2-комн.", ...).
+  const rowLabels: Record<string, string> = {
+    studio: "Студии",
+    "1": "1-комн.",
+    "2": "2-комн.",
+    "3": "3-комн.",
+    "4+": "4-комн. и более",
+  };
   const rows = ROOM_TYPES.filter((rt) => section.byRoomType[rt.key].count > 0).map((rt) => ({
     key: rt.key,
-    label: rt.label === "Студия" ? "Студии" : `${rt.label}омн.`,
+    label: rowLabels[rt.key] ?? rt.label,
     ...section.byRoomType[rt.key],
   }));
+  const aptWord = pluralize(section.apartmentCount, ["квартиру", "квартиры", "квартир"]);
 
+  // Per Figma 13558:78061 — right panel 360×617 in 1440 stage → 480×820 here.
+  // Title "N СЕКЦИЯ" UPPER in Unbounded H5 (24px → 32px on scale).
+  // Meta row: "Корпус N · до X этажей · Сдача …" — 14px Medium with dot separators.
+  // Rows: count (32) | type (Студии) | "от X млн ₽" — 14px throughout.
+  // CTA: full-width 14px Medium accent button.
   return (
     <Reveal
       mode="left"
       delay={250}
       key={section.id}
-      className="absolute right-10 top-1/2 z-10 w-[460px] -translate-y-1/2"
+      className="absolute right-10 top-1/2 z-10 w-[480px] -translate-y-1/2"
     >
-      <div className="bg-base-0/95 p-8 shadow-card backdrop-blur-md">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-[36px] font-semibold leading-none">
-            {section.number} секция
-          </h2>
-        </div>
-        <div className="mt-3 flex items-center gap-4 font-sans text-small text-base-600">
+      <div className="bg-base-0/95 px-8 py-8 shadow-card backdrop-blur-md">
+        <h2 className="font-display text-[32px] font-semibold uppercase leading-none tracking-[0.02em] text-base-800">
+          {section.number} секция
+        </h2>
+
+        <div className="mt-4 flex items-center gap-3 font-sans text-small font-medium text-base-600">
           <span>Корпус {house.number}</span>
           <span className="h-1 w-1 rounded-full bg-base-200" />
           <span>до {section.highFloor} этажей</span>
@@ -161,17 +175,17 @@ function SectionPanel({ section, onOpenSection }: PanelProps) {
           <span>Сдача {house.endDate}</span>
         </div>
 
-        <div className="mt-6 divide-y divide-base-200 border-y border-base-200">
+        <div className="mt-7 divide-y divide-base-200 border-y border-base-200">
           {rows.map((r) => (
             <div
               key={r.key}
-              className="grid grid-cols-[40px_1fr_auto] items-center gap-4 py-3"
+              className="grid grid-cols-[44px_1fr_auto] items-center gap-3 py-3.5"
             >
-              <span className="font-display text-h5 font-semibold tabular-nums text-base-800">
+              <span className="font-display text-[20px] font-semibold tabular-nums text-base-800">
                 {r.count}
               </span>
-              <span className="font-sans text-body text-base-800">{r.label}</span>
-              <span className="font-sans text-body text-base-600">
+              <span className="font-sans text-small font-medium text-base-800">{r.label}</span>
+              <span className="font-sans text-small text-base-600">
                 от {formatPrice(r.minPrice)}
               </span>
             </div>
@@ -181,12 +195,22 @@ function SectionPanel({ section, onOpenSection }: PanelProps) {
         <Pressable
           onClick={onOpenSection}
           rippleColor="rgba(255,255,255,0.25)"
-          className="mt-6 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
+          className="mt-7 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-small font-medium text-base-0"
         >
-          <span>Смотреть {section.apartmentCount} квартир</span>
+          <span>
+            Смотреть {section.apartmentCount} {aptWord}
+          </span>
           <IconArrowRight size={20} />
         </Pressable>
       </div>
     </Reveal>
   );
+}
+
+function pluralize(n: number, forms: [string, string, string]): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return forms[1];
+  return forms[2];
 }
