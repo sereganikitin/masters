@@ -10,7 +10,6 @@ import type { Apartment, RoomType } from "@/data/types";
 import {
   IconClose,
   IconArrowRight,
-  IconMap,
   IconPhone,
   IconPlay,
 } from "@/components/Icon";
@@ -830,49 +829,57 @@ function Construction() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Office() {
+  // Full-width dark map of the district with a CG marker in the centre and
+  // a self-contained office tile pinned to the bottom-right corner — matches
+  // cg-projects.ru/about layout.
   return (
-    <section className={`${PAGE_PAD} py-24`}>
-      <div className="relative h-[560px] w-full overflow-hidden bg-base-100">
-        {/* Map background — already has the office marker baked in per Figma asset */}
+    <section className="relative w-full bg-base-100">
+      <div className="relative h-[640px] w-full overflow-hidden bg-night-500">
         <img
           src="/images/about/office-map.png"
-          alt="Карта офиса продаж"
-          className="absolute inset-0 h-full w-full object-cover"
+          alt="Карта района офиса продаж"
+          className="absolute inset-0 h-full w-full object-cover opacity-90"
         />
-        {/* Soft gradient to keep the left-side copy readable over the map */}
-        <div className="absolute inset-0 bg-gradient-to-r from-base-0 via-base-0/80 to-transparent" />
 
-        <div className="relative z-10 grid h-full grid-cols-2 px-16 py-14 text-base-800">
-          <div className="flex flex-col justify-center">
-            <Reveal mode="up">
-              <SectionLabel>Офис продаж</SectionLabel>
-            </Reveal>
-            <Heading className="mt-6">
-              Офис продаж
-              <br />
-              «Мастерс»
-            </Heading>
-            <Reveal mode="up" delay={180}>
-              <p className="mt-8 font-sans text-h5 text-base-700">
-                г. Москва, Проезд Аэропорта, 8
-              </p>
-            </Reveal>
-            <Reveal mode="up" delay={260}>
-              <div className="mt-3 flex items-center gap-3 font-sans text-h5 text-base-700">
-                <IconPhone size={20} />
-                <span>+7 (495) 021-11-11</span>
-              </div>
-            </Reveal>
-            <Reveal mode="up" delay={340}>
-              <div className="mt-10">
-                <PrimaryButton>
-                  <IconMap size={18} />
-                  Проложить маршрут
-                </PrimaryButton>
-              </div>
-            </Reveal>
+        {/* CG marker — centred over the map */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="grid h-12 w-12 place-items-center bg-base-800 text-base-0 shadow-card">
+            <span className="font-display text-[13px] font-bold leading-none tracking-[0.05em]">
+              CG
+            </span>
           </div>
         </div>
+
+        {/* Office tile — bottom right */}
+        <Reveal mode="up" delay={120} className="absolute bottom-10 right-10 w-[420px]">
+          <div className="flex flex-col bg-night-500 text-base-0 shadow-card">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-base-100">
+              <img
+                src="/images/about/office.png"
+                alt="Фото офиса продаж"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+            <div className="flex flex-col gap-2 p-8">
+              <h3 className="font-sans text-[24px] font-semibold uppercase leading-tight tracking-[0.02em]">
+                Офис продаж
+                <br />
+                «Мастерс»
+              </h3>
+              <p className="mt-4 font-sans text-body text-base-0/75">
+                г. Москва, Проезд Аэропорта, 8
+              </p>
+              <p className="font-sans text-body text-base-0/75">+7 (495) 021-11-11</p>
+              <Pressable
+                rippleColor="rgba(255,255,255,0.18)"
+                className="mt-6 flex h-12 w-full items-center justify-between bg-base-0/[0.07] px-5 font-sans text-small font-medium text-base-0"
+              >
+                Проложить маршрут
+                <IconArrowRight size={16} />
+              </Pressable>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
