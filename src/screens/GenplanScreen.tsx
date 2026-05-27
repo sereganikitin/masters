@@ -7,9 +7,10 @@ import { OverlayLayer } from "@/components/OverlayLayer";
 import { useOverlays } from "@/lib/useOverlays";
 import { getHouse, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { IconArrowRight, IconCube, IconMap } from "@/components/Icon";
+import type { RoomType, Apartment } from "@/data/types";
+import type { Overlay } from "@/lib/overlays";
 
 // Approximate marker positions over /images/hero-genplan.png (1920x1080 stage).
-// These are visual approximations — refine against the real aerial photo if needed.
 const MARKERS: Record<number, { x: number; y: number }> = {
   1: { x: 540, y: 360 },
   2: { x: 820, y: 520 },
@@ -22,19 +23,69 @@ const MARKERS: Record<number, { x: number; y: number }> = {
 export function GenplanScreen() {
   const nav = useNavigate();
   const house = getHouse();
+
   const [activeNum, setActiveNum] = useState<number | null>(null);
+  const [rooms, setRooms] = useState<Set<RoomType>>(new Set());
+
+  // Global floor bounds across the building, used as slider defaults.
+  const floorBounds = useMemo(() => {
+    const all = house.sections.flatMap((s) =>
+      Object.keys(s.apartmentsByFloor).map(Number),
+    );
+    return {
+      min: all.length ? Math.min(...all) : 1,
+      max: all.length ? Math.max(...all) : 25,
+    };
+  }, [house]);
+  const [floorMin, setFloorMin] = useState<number>(floorBounds.min);
+  const [floorMax, setFloorMax] = useState<number>(floorBounds.max);
+
+  // Helper — does a section have apartments matching the current filters?
+  const sectionMatches = (sectionNumber: number): boolean => {
+    const section = house.sections.find((s) => s.number === sectionNumber);
+    if (!section) return false;
+    const apts: Apartment[] = Object.values(section.apartmentsByFloor).flat();
+    return apts.some((a) => {
+      if (rooms.size > 0 && !rooms.has(a.roomType)) return false;
+      if (a.floor < floorMin || a.floor > floorMax) return false;
+      return true;
+    });
+  };
+
   const active = useMemo(
     () => (activeNum == null ? null : house.sections.find((s) => s.number === activeNum) ?? null),
     [house, activeNum],
   );
 
-  // Admin-drawn overlays. If present they take over from the static markers.
   const { overlays: sectionOverlays } = useOverlays("genplan", "");
   const activeOverlayId = useMemo(() => {
     if (active == null) return null;
     const m = sectionOverlays.find((o) => Number(o.entityId) === active.number);
     return m?.id ?? null;
   }, [sectionOverlays, active]);
+
+  const isOverlayEnabled = (o: Overlay) => {
+    const n = Number(o.entityId);
+    if (Number.isNaN(n)) return true;
+    return sectionMatches(n);
+  };
+
+  const openCatalog = (sectionNumber: number) => {
+    const params = new URLSearchParams();
+    params.set("section", String(sectionNumber));
+    if (rooms.size > 0) params.set("rooms", Array.from(rooms).join(","));
+    if (floorMin !== floorBounds.min || floorMax !== floorBounds.max) {
+      params.set("floor", `${floorMin}-${floorMax}`);
+    }
+    nav(`/catalog?${params.toString()}`);
+  };
+
+  const toggleRoom = (rt: RoomType) =>
+    setRooms((prev) => {
+      const next = new Set(prev);
+      next.has(rt) ? next.delete(rt) : next.add(rt);
+      return next;
+    });
 
   return (
     <div className="relative h-full w-full bg-night-500">
@@ -47,22 +98,24 @@ export function GenplanScreen() {
 
       <OverlayChrome />
 
-      {/* Admin-drawn overlays */}
+      {/* Admin-drawn overlays — filtered */}
       <OverlayLayer
         scope="genplan"
         highlightId={activeOverlayId}
+        isEnabled={isOverlayEnabled}
         onPick={(o) => {
           const num = Number(o.entityId);
           if (!Number.isNaN(num)) setActiveNum(num);
         }}
       />
 
-      {/* Static fallback markers — visible only if no overlays defined */}
+      {/* Static fallback markers — only when no overlays defined */}
       {sectionOverlays.length === 0 && (
         <div className="absolute inset-0">
           {house.sections.map((s, i) => {
             const pos = MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
             const isActive = active != null && s.number === active.number;
+            const enabled = sectionMatches(s.number);
             return (
               <Reveal
                 key={s.id}
@@ -72,12 +125,15 @@ export function GenplanScreen() {
                 style={{ left: pos.x, top: pos.y, transform: "translate(-50%, -50%)" }}
               >
                 <Pressable
-                  onClick={() => setActiveNum(s.number)}
+                  disabled={!enabled}
+                  onClick={() => enabled && setActiveNum(s.number)}
                   rippleColor={isActive ? "rgba(255,255,255,0.3)" : "rgba(0,97,166,0.2)"}
-                  className={`px-3 py-1.5 font-display text-[12px] font-semibold uppercase tracking-[0.15em] backdrop-blur-md ${
-                    isActive
-                      ? "bg-accent text-base-0 shadow-card"
-                      : "bg-base-0/85 text-base-800"
+                  className={`px-3 py-1.5 font-display text-[12px] font-semibold uppercase tracking-[0.15em] backdrop-blur-md transition-opacity ${
+                    !enabled
+                      ? "bg-base-0/30 text-base-0/40"
+                      : isActive
+                        ? "bg-accent text-base-0 shadow-card"
+                        : "bg-base-0/85 text-base-800"
                   }`}
                 >
                   {s.number} секция · {s.apartmentCount} кв.
@@ -88,14 +144,80 @@ export function GenplanScreen() {
         </div>
       )}
 
-      {/* Street label */}
-      <Reveal mode="up" delay={400} className="absolute bottom-10 left-10 z-10">
-        <div className="bg-accent px-5 py-2 font-sans text-body font-medium text-base-0">
-          ул. 3-я Песчаная
+      {/* Bottom-left — filters */}
+      <Reveal
+        mode="up"
+        delay={300}
+        className="absolute bottom-10 left-10 z-10 flex flex-col gap-3"
+      >
+        {/* Room type chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          {ROOM_TYPES.map((rt) => {
+            const active = rooms.has(rt.key);
+            return (
+              <Pressable
+                key={rt.key}
+                onClick={() => toggleRoom(rt.key)}
+                rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
+                className={`h-12 px-5 font-sans text-body font-medium transition-colors ${
+                  active
+                    ? "bg-night-500 text-base-0"
+                    : "border border-base-200 bg-base-0/95 text-base-800"
+                }`}
+              >
+                {rt.label}
+              </Pressable>
+            );
+          })}
+        </div>
+
+        {/* Floor range */}
+        <div className="flex items-center gap-2 bg-base-0/95 px-4 py-2 backdrop-blur-md">
+          <span className="font-sans text-small font-medium uppercase tracking-[0.15em] text-base-600">
+            Этаж
+          </span>
+          <input
+            type="number"
+            min={floorBounds.min}
+            max={floorMax}
+            value={floorMin}
+            onChange={(e) =>
+              setFloorMin(
+                Math.max(floorBounds.min, Math.min(Number(e.target.value), floorMax)),
+              )
+            }
+            className="h-9 w-16 border border-base-200 bg-base-0 px-2 font-sans text-body tabular-nums text-base-800 outline-none focus:border-accent"
+          />
+          <span className="text-base-600">—</span>
+          <input
+            type="number"
+            min={floorMin}
+            max={floorBounds.max}
+            value={floorMax}
+            onChange={(e) =>
+              setFloorMax(
+                Math.min(floorBounds.max, Math.max(Number(e.target.value), floorMin)),
+              )
+            }
+            className="h-9 w-16 border border-base-200 bg-base-0 px-2 font-sans text-body tabular-nums text-base-800 outline-none focus:border-accent"
+          />
+          {(floorMin !== floorBounds.min || floorMax !== floorBounds.max) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFloorMin(floorBounds.min);
+                setFloorMax(floorBounds.max);
+              }}
+              className="ml-1 font-sans text-small text-base-600 hover:text-base-800"
+              title="Сбросить"
+            >
+              ×
+            </button>
+          )}
         </div>
       </Reveal>
 
-      {/* Bottom-right controls */}
+      {/* Bottom-right — infrastructure / 3D tour */}
       <Reveal mode="up" delay={400} className="absolute bottom-10 right-10 z-10">
         <div className="flex items-center gap-3">
           <Pressable
@@ -120,7 +242,10 @@ export function GenplanScreen() {
       {active && (
         <SectionPanel
           section={active}
-          onOpenSection={() => nav(`/section/${active.number}`)}
+          rooms={rooms}
+          floorMin={floorMin}
+          floorMax={floorMax}
+          onOpenSection={() => openCatalog(active.number)}
         />
       )}
     </div>
@@ -129,13 +254,14 @@ export function GenplanScreen() {
 
 interface PanelProps {
   section: ReturnType<typeof getHouse>["sections"][number];
+  rooms: Set<RoomType>;
+  floorMin: number;
+  floorMax: number;
   onOpenSection: () => void;
 }
 
-function SectionPanel({ section, onOpenSection }: PanelProps) {
+function SectionPanel({ section, rooms, floorMin, floorMax, onOpenSection }: PanelProps) {
   const house = getHouse();
-  // Per Figma: section panel shows only the room types that actually exist in the feed.
-  // labels are in genitive plural ("Студии", "1-комн.", "2-комн.", ...).
   const rowLabels: Record<string, string> = {
     studio: "Студии",
     "1": "1-комн.",
@@ -143,18 +269,33 @@ function SectionPanel({ section, onOpenSection }: PanelProps) {
     "3": "3-комн.",
     "4+": "4-комн. и более",
   };
-  const rows = ROOM_TYPES.filter((rt) => section.byRoomType[rt.key].count > 0).map((rt) => ({
+
+  // Count matching apartments by room type, applying both filters.
+  const filteredByRoom = useMemo(() => {
+    const result: Record<string, { count: number; minPrice: number; minArea: number }> = {};
+    for (const rt of ROOM_TYPES) {
+      result[rt.key] = { count: 0, minPrice: 0, minArea: 0 };
+    }
+    const apts: Apartment[] = Object.values(section.apartmentsByFloor).flat();
+    for (const a of apts) {
+      if (rooms.size > 0 && !rooms.has(a.roomType)) continue;
+      if (a.floor < floorMin || a.floor > floorMax) continue;
+      const r = result[a.roomType];
+      r.count += 1;
+      if (r.minPrice === 0 || a.price < r.minPrice) r.minPrice = a.price;
+      if (r.minArea === 0 || a.area < r.minArea) r.minArea = a.area;
+    }
+    return result;
+  }, [section, rooms, floorMin, floorMax]);
+
+  const rows = ROOM_TYPES.filter((rt) => filteredByRoom[rt.key].count > 0).map((rt) => ({
     key: rt.key,
     label: rowLabels[rt.key] ?? rt.label,
-    ...section.byRoomType[rt.key],
+    ...filteredByRoom[rt.key],
   }));
-  const aptWord = pluralize(section.apartmentCount, ["квартиру", "квартиры", "квартир"]);
+  const totalCount = rows.reduce((n, r) => n + r.count, 0);
+  const aptWord = pluralize(totalCount, ["квартиру", "квартиры", "квартир"]);
 
-  // Per Figma 13558:78061 — right panel 360×617 in 1440 stage → 480×820 here.
-  // Title "N СЕКЦИЯ" UPPER in Unbounded H5 (24px → 32px on scale).
-  // Meta row: "Корпус N · до X этажей · Сдача …" — 14px Medium with dot separators.
-  // Rows: count (32) | type (Студии) | "от X млн ₽" — 14px throughout.
-  // CTA: full-width 14px Medium accent button.
   return (
     <Reveal
       mode="left"
@@ -175,30 +316,37 @@ function SectionPanel({ section, onOpenSection }: PanelProps) {
           <span>Сдача {house.endDate}</span>
         </div>
 
-        <div className="mt-7 divide-y divide-base-200 border-y border-base-200">
-          {rows.map((r) => (
-            <div
-              key={r.key}
-              className="grid grid-cols-[44px_1fr_auto] items-center gap-3 py-3.5"
-            >
-              <span className="font-display text-[20px] font-semibold tabular-nums text-base-800">
-                {r.count}
-              </span>
-              <span className="font-sans text-small font-medium text-base-800">{r.label}</span>
-              <span className="font-sans text-small text-base-600">
-                от {formatPrice(r.minPrice)}
-              </span>
-            </div>
-          ))}
-        </div>
+        {rows.length > 0 ? (
+          <div className="mt-7 divide-y divide-base-200 border-y border-base-200">
+            {rows.map((r) => (
+              <div
+                key={r.key}
+                className="grid grid-cols-[44px_1fr_auto] items-center gap-3 py-3.5"
+              >
+                <span className="font-display text-[20px] font-semibold tabular-nums text-base-800">
+                  {r.count}
+                </span>
+                <span className="font-sans text-small font-medium text-base-800">{r.label}</span>
+                <span className="font-sans text-small text-base-600">
+                  от {formatPrice(r.minPrice)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-7 border-y border-base-200 py-6 text-center font-sans text-small text-base-600">
+            Нет квартир под выбранные фильтры
+          </p>
+        )}
 
         <Pressable
           onClick={onOpenSection}
+          disabled={totalCount === 0}
           rippleColor="rgba(255,255,255,0.25)"
-          className="mt-7 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-small font-medium text-base-0"
+          className="mt-7 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-small font-medium text-base-0 disabled:opacity-50"
         >
           <span>
-            Смотреть {section.apartmentCount} {aptWord}
+            Смотреть {totalCount} {aptWord}
           </span>
           <IconArrowRight size={20} />
         </Pressable>

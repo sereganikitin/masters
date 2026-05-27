@@ -83,8 +83,8 @@ export function ApartmentScreen() {
   return (
     <div className="relative h-full w-full bg-base-100">
       <OverlayChrome
-        onBack={() => nav(`/floor/${apt.sectionNumber}/${apt.floor}`)}
-        backLabel={`Этаж ${apt.floor}`}
+        onBack={() => nav(`/catalog?section=${apt.sectionNumber}`)}
+        backLabel={`Секция ${apt.sectionNumber}`}
       />
 
       <div className="absolute inset-x-10 bottom-10 top-10 grid grid-cols-[1fr_480px] gap-6 pl-44">

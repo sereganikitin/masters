@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable } from "@/components/Pressable";
 import { Reveal } from "@/components/Reveal";
 import { PlanImage } from "@/components/PlanImage";
@@ -49,6 +49,7 @@ function getDefaultFilters(all: Apartment[]): Filters {
 
 export function CatalogScreen() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const house = getHouse();
   const allApartments = useMemo<Apartment[]>(
     () => house.sections.flatMap((s) => Object.values(s.apartmentsByFloor).flat()),
@@ -58,6 +59,51 @@ export function CatalogScreen() {
   const bounds = useMemo(() => getDefaultFilters(allApartments), [allApartments]);
   const [filters, setFilters] = useState<Filters>(bounds);
   const [sort, setSort] = useState<SortKey>("price-asc");
+
+  // Apply URL filters on mount — when arriving from /genplan:
+  //   ?section=2          — single or comma-separated section numbers
+  //   ?rooms=1,2,studio   — comma-separated room types
+  //   ?floor=2-15         — floor range (inclusive)
+  useEffect(() => {
+    setFilters((f) => {
+      const next = { ...f };
+
+      const rawSection = searchParams.get("section");
+      if (rawSection) {
+        const nums = rawSection
+          .split(",")
+          .map((s) => Number(s.trim()))
+          .filter((n) => Number.isFinite(n) && n > 0);
+        if (nums.length > 0) next.sections = new Set(nums);
+      }
+
+      const rawRooms = searchParams.get("rooms");
+      if (rawRooms) {
+        const allowed = new Set(["studio", "1", "2", "3", "4+"]);
+        const list = rawRooms
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => allowed.has(s)) as RoomType[];
+        if (list.length > 0) next.room = new Set(list);
+      }
+
+      const rawFloor = searchParams.get("floor");
+      if (rawFloor) {
+        const m = rawFloor.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (m) {
+          const lo = Math.max(bounds.minFloor, Number(m[1]));
+          const hi = Math.min(bounds.maxFloor, Number(m[2]));
+          if (lo <= hi) {
+            next.minFloor = lo;
+            next.maxFloor = hi;
+          }
+        }
+      }
+
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     let list = allApartments.filter((a) => {

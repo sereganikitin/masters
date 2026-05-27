@@ -1,14 +1,18 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Stage } from "@/layouts/Stage";
 import { HeroScreen } from "@/screens/HeroScreen";
 import { AboutScreen } from "@/screens/AboutScreen";
 import { CatalogScreen } from "@/screens/CatalogScreen";
 import { GenplanScreen } from "@/screens/GenplanScreen";
-import { SectionScreen } from "@/screens/SectionScreen";
-import { FloorScreen } from "@/screens/FloorScreen";
 import { ApartmentScreen } from "@/screens/ApartmentScreen";
 import { TourScreen } from "@/screens/TourScreen";
 import { AdminScreen } from "@/screens/AdminScreen";
+
+function RedirectSectionToCatalog() {
+  const params = useParams<{ sectionNumber?: string }>();
+  const n = params.sectionNumber;
+  return <Navigate to={n ? `/catalog?section=${n}` : "/catalog"} replace />;
+}
 
 /**
  * Two rendering modes:
@@ -43,8 +47,16 @@ export function App() {
               <Routes>
                 <Route path="/" element={<HeroScreen />} />
                 <Route path="/genplan" element={<GenplanScreen />} />
-                <Route path="/section/:sectionNumber" element={<SectionScreen />} />
-                <Route path="/floor/:sectionNumber/:floor" element={<FloorScreen />} />
+                {/* Old per-section / per-floor pages — redirect into the catalog
+                  * with the appropriate filter applied. */}
+                <Route
+                  path="/section/:sectionNumber"
+                  element={<RedirectSectionToCatalog />}
+                />
+                <Route
+                  path="/floor/:sectionNumber/:floor"
+                  element={<RedirectSectionToCatalog />}
+                />
                 <Route path="/apartment/:apartmentId" element={<ApartmentScreen />} />
                 <Route path="/tour" element={<TourScreen />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
