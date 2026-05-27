@@ -1,15 +1,39 @@
 import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 import { OverlayChrome } from "@/components/OverlayChrome";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
-import { getApartment, formatArea, formatPrice, roomTypeLabel } from "@/data/complex";
+import {
+  getApartment,
+  getHouse,
+  formatArea,
+  formatPrice,
+  roomTypeLabel,
+} from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
+import { IconArrowRight, IconMap, IconHome } from "@/components/Icon";
+
+// Subsidised-mortgage estimate per Figma. Standard kiosk assumption:
+// 6% annual rate, 20% down-payment, 20-year term (240 months).
+function monthlyMortgage(price: number): number {
+  const credit = price * 0.8;
+  const r = 0.06 / 12;
+  const n = 240;
+  const factor = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  return Math.round(credit * factor);
+}
+
+const RUB = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
+
+type PlanTab = "furnished" | "floor" | "genplan" | "plan2d" | "views";
 
 export function ApartmentScreen() {
   const { apartmentId } = useParams();
   const nav = useNavigate();
   const apt = apartmentId ? getApartment(apartmentId) : undefined;
+  const house = getHouse();
+  const [planTab, setPlanTab] = useState<PlanTab>("plan2d");
 
   if (!apt) {
     return (
@@ -27,23 +51,34 @@ export function ApartmentScreen() {
     );
   }
 
-  const features: { label: string; value: string }[] = [
-    { label: "Тип", value: roomTypeLabel(apt.roomType) },
-    { label: "Этаж", value: String(apt.floor) },
-    { label: "Секция", value: String(apt.sectionNumber) },
-    { label: "Площадь", value: formatArea(apt.area) },
-    { label: "Жилая", value: formatArea(apt.livingArea) },
-    { label: "Цена за м²", value: formatPrice(apt.pricePerMeter) },
-    { label: "Отделка", value: apt.decoration || "—" },
-    { label: "Балконы", value: String(apt.features.balconyCount || 0) },
-    { label: "Лоджии", value: String(apt.features.loggiaCount || 0) },
+  // Tags row — derived from feed flags.
+  const tags: { label: string; tone?: "outline" }[] = [];
+  if (apt.decoration) tags.push({ label: apt.decoration, tone: "outline" });
+  if (apt.features.largeKitchenLivingRoom)
+    tags.push({ label: "Кухня-гостиная", tone: "outline" });
+  if (apt.features.masterBedroom) tags.push({ label: "Мастер-спальня", tone: "outline" });
+  if (apt.features.cornerGlazing)
+    tags.push({ label: "Угловое остекление", tone: "outline" });
+  if (apt.features.balconyCount > 0) tags.push({ label: "Балкон", tone: "outline" });
+  if (apt.features.loggiaCount > 0) tags.push({ label: "Лоджия", tone: "outline" });
+
+  const VISIBLE = 3;
+  const visibleTags = tags.slice(0, VISIBLE);
+  const moreCount = Math.max(0, tags.length - VISIBLE);
+
+  const planTabs: { key: PlanTab; label: string; onClick?: () => void }[] = [
+    { key: "furnished", label: "С мебелью" },
+    {
+      key: "floor",
+      label: "На этаже",
+      onClick: () => nav(`/floor/${apt.sectionNumber}/${apt.floor}`),
+    },
+    { key: "genplan", label: "Генплан", onClick: () => nav("/genplan") },
+    { key: "plan2d", label: "2D План" },
+    { key: "views", label: "Вид из окон" },
   ];
 
-  const perks = [
-    apt.features.cornerGlazing && "Угловое остекление",
-    apt.features.largeKitchenLivingRoom && "Кухня-гостиная",
-    apt.features.masterBedroom && "Мастер-спальня",
-  ].filter(Boolean) as string[];
+  const monthly = monthlyMortgage(apt.price);
 
   return (
     <div className="relative h-full w-full bg-base-100">
@@ -52,102 +87,188 @@ export function ApartmentScreen() {
         backLabel={`Этаж ${apt.floor}`}
       />
 
-      <div className="absolute inset-x-10 bottom-10 top-10 grid grid-cols-[1.4fr_1fr] gap-6 pl-44">
-        {/* Plan */}
+      <div className="absolute inset-x-10 bottom-10 top-10 grid grid-cols-[1fr_480px] gap-6 pl-44">
+        {/* Plan column */}
         <Reveal mode="left" delay={80} className="h-full">
-          <div className="relative h-full overflow-hidden bg-base-0 shadow-card">
-            <div className="absolute left-8 top-8 z-10 font-sans text-small uppercase tracking-[0.2em] text-base-600">
-              План квартиры
-            </div>
-            {/* Padded box that constrains the image. The inner div has fixed inset
-              * padding so object-contain has a real bounding box (h-full inside grid
-              * doesn't constrain an img — we need absolute positioning). */}
-            <div className="absolute inset-0 px-20 pb-16 pt-24">
+          <div className="relative flex h-full flex-col bg-base-0 shadow-card">
+            {/* Plan canvas */}
+            <div className="relative min-h-0 flex-1">
               <PlanImage
                 src={apartmentPlanUrl(apt)}
                 alt={`План квартиры №${apt.number}`}
-                className="h-full w-full object-contain"
+                className="absolute inset-0 h-full w-full object-contain p-16"
                 fallback={
-                  <div className="grid h-full w-full place-items-center text-center font-sans text-h5 text-base-600">
-                    <div>
-                      <p>План №{apt.number}</p>
-                      <p className="mt-2 text-small">Изображение не загрузилось</p>
-                    </div>
+                  <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
+                    План №{apt.number} не загрузился
                   </div>
                 }
               />
+              {/* Lot number badge on plan, per Figma */}
+              <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
+                №{apt.number}
+              </div>
+            </div>
+
+            {/* Bottom toolbar — 5 view tabs per Figma frame 427319752 */}
+            <div className="flex-shrink-0 border-t border-base-200 px-6 py-5">
+              <div className="flex items-center gap-2">
+                {planTabs.map((t) => {
+                  const isActive = planTab === t.key;
+                  return (
+                    <Pressable
+                      key={t.key}
+                      onClick={() => {
+                        if (t.onClick) t.onClick();
+                        else setPlanTab(t.key);
+                      }}
+                      rippleColor={
+                        isActive ? "rgba(255,255,255,0.25)" : "rgba(0,97,166,0.12)"
+                      }
+                      className={`h-11 px-5 font-sans text-small font-medium transition-colors ${
+                        isActive
+                          ? "bg-night-500 text-base-0"
+                          : "border border-base-200 bg-base-0 text-base-800"
+                      }`}
+                    >
+                      {t.label}
+                    </Pressable>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </Reveal>
 
-        {/* Details */}
+        {/* Right info panel */}
         <Reveal mode="right" delay={120} className="h-full">
-          <div className="flex h-full flex-col gap-6 overflow-y-auto bg-base-0 p-8 shadow-card">
-            <Reveal mode="up" delay={150}>
-              <div>
-                <p className="font-sans text-upper uppercase tracking-[0.25em] text-base-600">
-                  Квартира №{apt.number}
-                </p>
-                <h2 className="mt-2 font-display text-[44px] font-semibold leading-none text-base-800">
-                  {roomTypeLabel(apt.roomType)}, {formatArea(apt.area)}
-                </h2>
-              </div>
-            </Reveal>
-
-            <Reveal mode="up" delay={220}>
-              <div className="bg-base-100 p-6">
-                <p className="font-sans text-small text-base-600">Стоимость</p>
-                <p className="mt-1 font-display text-[40px] font-semibold leading-none text-accent">
-                  {formatPrice(apt.price)}
-                </p>
-                <p className="mt-2 font-sans text-small text-base-600">
-                  {formatPrice(apt.pricePerMeter)} за м²
-                </p>
-              </div>
-            </Reveal>
-
-            <Reveal mode="up" delay={300}>
-              <div className="divide-y divide-base-200">
-                {features.map((f) => (
-                  <div key={f.label} className="grid grid-cols-[1fr_auto] gap-4 py-3">
-                    <span className="font-sans text-body text-base-600">{f.label}</span>
-                    <span className="font-sans text-body font-medium text-base-800">{f.value}</span>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-
-            {perks.length > 0 && (
-              <Reveal mode="up" delay={380}>
-                <div>
-                  <p className="font-sans text-upper uppercase tracking-[0.25em] text-base-600">
-                    Особенности
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {perks.map((p) => (
+          <div className="flex h-full flex-col bg-night-500 text-base-0 shadow-card">
+            <div
+              className="flex-1 overflow-y-auto px-8 py-8"
+              style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+            >
+              {/* Tag row */}
+              {visibleTags.length > 0 && (
+                <Reveal mode="up" delay={120}>
+                  <div className="flex flex-wrap gap-2">
+                    {visibleTags.map((t) => (
                       <span
-                        key={p}
-                        className="bg-base-100 px-4 py-2 font-sans text-small font-medium text-base-700"
+                        key={t.label}
+                        className="border border-base-0/30 bg-transparent px-3 py-1.5 font-sans text-[12px] font-medium text-base-0"
                       >
-                        {p}
+                        {t.label}
                       </span>
                     ))}
+                    {moreCount > 0 && (
+                      <span className="border border-base-0/30 bg-transparent px-3 py-1.5 font-sans text-[12px] font-medium text-base-0">
+                        Еще +{moreCount}
+                      </span>
+                    )}
                   </div>
+                </Reveal>
+              )}
+
+              {/* Meta rows */}
+              <Reveal mode="up" delay={180}>
+                <dl className="mt-8 grid grid-cols-[140px_1fr] gap-y-2 font-sans text-small">
+                  <dt className="text-base-0/55">Проект</dt>
+                  <dd className="text-right font-medium text-base-0">МАСТЕРС</dd>
+                  <dt className="text-base-0/55">В ипотеку</dt>
+                  <dd className="text-right font-medium text-base-0">от {RUB(monthly)}/мес.</dd>
+                  <dt className="text-base-0/55">Номер лота</dt>
+                  <dd className="text-right font-medium text-base-0">{apt.number}</dd>
+                  <dt className="text-base-0/55">Цена за м²</dt>
+                  <dd className="text-right font-medium text-base-0">
+                    {formatPrice(apt.pricePerMeter)}
+                  </dd>
+                </dl>
+              </Reveal>
+
+              {/* Main heading + price */}
+              <Reveal mode="up" delay={240}>
+                <div className="mt-10">
+                  <h2 className="font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
+                    {roomTypeLabel(apt.roomType)}, {formatArea(apt.area)}
+                  </h2>
+                  <p className="mt-4 font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
+                    {formatPrice(apt.price)}
+                  </p>
                 </div>
               </Reveal>
-            )}
 
-            <Reveal mode="up" delay={450} className="mt-auto">
-              <Pressable
-                rippleColor="rgba(255,255,255,0.25)"
-                className="flex h-16 w-full items-center justify-center bg-accent font-sans text-h5 font-medium text-base-0"
-              >
-                Получить консультацию
-              </Pressable>
-            </Reveal>
+              {/* Detail row — corpus / section / floor / completion */}
+              <Reveal mode="up" delay={300}>
+                <div className="mt-10 grid grid-cols-2 gap-y-3 border-y border-base-0/15 py-5 font-sans text-small">
+                  <span className="text-base-0/55">Корпус</span>
+                  <span className="text-right font-medium">{house.number}</span>
+                  <span className="text-base-0/55">Секция</span>
+                  <span className="text-right font-medium">{apt.sectionNumber}</span>
+                  <span className="text-base-0/55">Этаж</span>
+                  <span className="text-right font-medium">
+                    {apt.floor} из {house.highFloor}
+                  </span>
+                  <span className="text-base-0/55">Сдача</span>
+                  <span className="text-right font-medium">{house.endDate}</span>
+                </div>
+              </Reveal>
+
+              {/* Booking CTA */}
+              <Reveal mode="up" delay={360}>
+                <Pressable
+                  rippleColor="rgba(255,255,255,0.25)"
+                  className="mt-8 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
+                >
+                  Забронировать
+                  <IconArrowRight size={18} />
+                </Pressable>
+              </Reveal>
+
+              {/* Sub-offers — storage / parking / mortgage calc */}
+              <Reveal mode="up" delay={420}>
+                <div className="mt-8 grid grid-cols-3 gap-3">
+                  <OfferCard
+                    icon={<IconMap size={18} />}
+                    title="Машино-место"
+                    note="от 1,7 млн ₽"
+                  />
+                  <OfferCard
+                    icon={<IconHome size={18} />}
+                    title="Кладовая"
+                    note="от 800 тыс ₽"
+                  />
+                  <OfferCard
+                    icon={<IconArrowRight size={18} />}
+                    title="Ипотека"
+                    note={`от ${RUB(monthly)}/мес.`}
+                  />
+                </div>
+              </Reveal>
+            </div>
           </div>
         </Reveal>
       </div>
     </div>
+  );
+}
+
+function OfferCard({
+  icon,
+  title,
+  note,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  note: string;
+}) {
+  return (
+    <Pressable
+      rippleColor="rgba(255,255,255,0.18)"
+      className="flex aspect-[3/4] w-full flex-col items-start justify-between bg-base-0/[0.04] p-4 text-left text-base-0"
+    >
+      <div className="rounded-full bg-base-0/10 p-2">{icon}</div>
+      <div>
+        <p className="font-display text-[14px] font-semibold leading-tight">{title}</p>
+        <p className="mt-1 font-sans text-[12px] text-base-0/55">{note}</p>
+      </div>
+    </Pressable>
   );
 }
