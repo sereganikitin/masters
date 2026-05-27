@@ -50,6 +50,14 @@ export function OverlayLayer({
       preserveAspectRatio="none"
       className="pointer-events-none absolute inset-0 h-full w-full"
     >
+      <defs>
+        {overlays.map((o) => (
+          <clipPath key={`clip-${o.id}`} id={`overlay-clip-${o.id}`}>
+            <path d={pointsToPath(o.points)} />
+          </clipPath>
+        ))}
+      </defs>
+
       {overlays.map((o) => {
         const enabled = isEnabled ? isEnabled(o) : true;
         const isActive = enabled && highlightId === o.id;
@@ -59,14 +67,16 @@ export function OverlayLayer({
         const { primary, secondary } = splitLabel(o.label);
         const d = pointsToPath(o.points);
 
-        // Fill + accent stroke (smooth transitions). White outer stroke is rendered
-        // as a second path underneath so the polygon reads against either light
-        // facades or dark park areas behind the building.
-        const fillOpacity = isActive ? 0.4 : isHover ? 0.22 : 0;
-        const accentStrokeOpacity = isHighlighted ? 1 : 0;
-        const whiteStrokeOpacity = isHighlighted ? 0.85 : 0;
-        const accentStrokeWidth = isActive ? 2.5 : 2;
-        const whiteStrokeWidth = isActive ? 6 : 5;
+        // White outer contour. Active stroke is twice the hover stroke.
+        const hoverStroke = 3;
+        const activeStroke = hoverStroke * 2;
+        const strokeWidth = isActive ? activeStroke : hoverStroke;
+        const strokeOpacity = isHighlighted ? 1 : 0;
+
+        // Inner glow — wide blurred coloured stroke clipped to the polygon. Sits
+        // at the edges, fades inward → looks like a soft gradient from the rim.
+        const glowOpacity = isActive ? 0.55 : isHover ? 0.35 : 0;
+        const glowRadius = isActive ? 70 : 50;
 
         return (
           <g
@@ -77,37 +87,41 @@ export function OverlayLayer({
             onPointerEnter={() => enabled && setHoverId(o.id)}
             onPointerLeave={() => setHoverId((h) => (h === o.id ? null : h))}
           >
-            {/* White halo — wider, sits below the accent stroke */}
+            {/* Invisible hitbox so taps register even before the outline appears */}
+            <path d={d} fill="rgba(0,0,0,0.001)" />
+
+            {/* Inner glow — coloured blurred stroke clipped to the polygon */}
+            <g clipPath={`url(#overlay-clip-${o.id})`} style={{ pointerEvents: "none" }}>
+              <path
+                d={d}
+                fill="none"
+                stroke={o.color}
+                strokeWidth={glowRadius}
+                strokeOpacity={glowOpacity}
+                strokeLinejoin="round"
+                style={{
+                  filter: "blur(14px)",
+                  transition:
+                    "stroke-opacity 320ms ease, stroke-width 320ms ease",
+                }}
+              />
+            </g>
+
+            {/* White outer contour */}
             <path
               d={d}
               fill="none"
               stroke="#FFFFFF"
-              strokeWidth={whiteStrokeWidth}
-              strokeOpacity={whiteStrokeOpacity}
+              strokeWidth={strokeWidth}
+              strokeOpacity={strokeOpacity}
               strokeLinejoin="round"
               vectorEffect="non-scaling-stroke"
               style={{
                 transition:
-                  "stroke-opacity 300ms ease, stroke-width 300ms ease",
-              }}
-            />
-            {/* Coloured fill + accent stroke on top */}
-            <path
-              d={d}
-              fill={o.color}
-              fillOpacity={fillOpacity}
-              stroke={o.color}
-              strokeWidth={accentStrokeWidth}
-              strokeOpacity={accentStrokeOpacity}
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-              style={{
-                transition:
-                  "fill-opacity 300ms ease, stroke-opacity 300ms ease, stroke-width 300ms ease",
+                  "stroke-opacity 280ms ease, stroke-width 280ms cubic-bezier(0.2, 0.7, 0.2, 1)",
               }}
             />
 
-            {/* Info chip — single tone always; subtle scale on hover/active. */}
             {showLabels && o.label && (
               <ChipLabel
                 cx={anchor[0]}
