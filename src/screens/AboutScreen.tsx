@@ -834,11 +834,16 @@ function Office() {
   // cg-projects.ru/about layout.
   return (
     <section className="relative w-full bg-base-100">
-      <div className="relative h-[640px] w-full overflow-hidden bg-night-500">
+      {/* Match the original image aspect ratio (1692×991) so the map is shown
+        * in full — no top/bottom crop. */}
+      <div
+        className="relative w-full overflow-hidden bg-night-500"
+        style={{ aspectRatio: "1692 / 991" }}
+      >
         <img
           src="/images/about/office-map.png"
           alt="Карта района офиса продаж"
-          className="absolute inset-0 h-full w-full object-cover opacity-90"
+          className="absolute inset-0 h-full w-full object-contain opacity-95"
         />
 
         {/* CG marker — centred over the map */}
