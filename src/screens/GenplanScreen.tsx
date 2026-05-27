@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { OverlayChrome } from "@/components/OverlayChrome";
-import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { GenplanCanvas } from "@/components/GenplanCanvas";
 import { getHouse, ROOM_TYPES } from "@/data/complex";
@@ -73,12 +72,10 @@ export function GenplanScreen() {
 
       <OverlayChrome />
 
-      {/* Bottom-left — room + floor filters. z-30 keeps them above overlay SVGs. */}
-      <Reveal
-        mode="up"
-        delay={300}
-        className="absolute bottom-10 left-10 z-30 flex flex-col gap-3"
-      >
+      {/* Bottom-left — room + floor filters. z-30 keeps them above overlay SVGs.
+        * No Reveal wrapper — these controls must be visible immediately on a
+        * fixed Stage where IntersectionObserver can be unreliable. */}
+      <div className="absolute bottom-10 left-10 z-30 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {ROOM_TYPES.map((rt) => {
             const active = rooms.has(rt.key);
@@ -142,10 +139,10 @@ export function GenplanScreen() {
             </button>
           )}
         </div>
-      </Reveal>
+      </div>
 
       {/* Bottom-right — disabled infrastructure toggle + 3D-tour. z-30 above SVG. */}
-      <Reveal mode="up" delay={400} className="absolute bottom-10 right-10 z-30">
+      <div className="absolute bottom-10 right-10 z-30">
         <div className="flex items-center gap-3">
           <div
             className="flex h-12 items-center gap-3 bg-base-0/95 px-5 font-sans text-body font-medium text-base-800 backdrop-blur-sm"
@@ -171,7 +168,7 @@ export function GenplanScreen() {
             3D-тур
           </Pressable>
         </div>
-      </Reveal>
+      </div>
     </div>
   );
 }

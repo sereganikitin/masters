@@ -279,7 +279,7 @@ function Genplan() {
         className="relative w-full overflow-hidden"
         style={{ aspectRatio: "1920 / 1080" }}
       >
-        <GenplanCanvas showOverlays={false} showPOI />
+        <GenplanCanvas showOverlays={false} showPOI chipsOffsetY={50} />
 
         {/* Bottom CTA — full kiosk view */}
         <div className="absolute bottom-10 right-10 z-20">
