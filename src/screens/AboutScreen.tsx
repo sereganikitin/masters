@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
-import { useParallax } from "@/lib/useParallax";
+import { OverlayLayer } from "@/components/OverlayLayer";
+import { useOverlays } from "@/lib/useOverlays";
 import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
@@ -13,6 +14,17 @@ import {
   IconPhone,
   IconPlay,
 } from "@/components/Icon";
+
+// Mirror the static fallback positions from GenplanScreen so the embed looks
+// identical when admin hasn't drawn overlays yet.
+const GENPLAN_MARKERS: Record<number, { x: number; y: number }> = {
+  1: { x: 540, y: 360 },
+  2: { x: 820, y: 520 },
+  3: { x: 980, y: 380 },
+  4: { x: 1180, y: 260 },
+  5: { x: 1300, y: 460 },
+  6: { x: 1080, y: 620 },
+};
 
 // About page modelled on cg-projects.ru/about. Verbatim copy & section flow
 // per Figma frame 14057:31658. All section titles are huge UPPERCASE.
@@ -266,23 +278,13 @@ function CtaTile({
 
 function Genplan() {
   const nav = useNavigate();
-  const bgRef = useParallax<HTMLDivElement>(0.18);
+  const house = getHouse();
+  const { overlays, loading } = useOverlays("genplan", "");
 
-  // Infrastructure + section labels positioned over the aerial photo.
-  // Coordinates are percentage-based for responsive scaling across resolutions.
-  // Style identical to OverlayLayer ChipLabel (dark bg, white primary, dim secondary).
-  const labels: { x: number; y: number; primary: string; secondary?: string }[] = [
-    { x: 22, y: 18, primary: "Школа № 117" },
-    { x: 12, y: 36, primary: "Детский сад" },
-    { x: 78, y: 22, primary: "Парк «Берёзовая роща»" },
-    { x: 86, y: 48, primary: "м. ЦСКА", secondary: "15 мин" },
-    { x: 8, y: 68, primary: "ул. Викторенко" },
-    { x: 32, y: 60, primary: "1 секция", secondary: "75 кв." },
-    { x: 47, y: 70, primary: "2 секция", secondary: "334 кв." },
-    { x: 60, y: 62, primary: "3 секция", secondary: "67 кв." },
-    { x: 70, y: 74, primary: "4 секция", secondary: "53 кв." },
-    { x: 84, y: 72, primary: "5 секция", secondary: "32 кв." },
-  ];
+  // Single-tap on a section → catalog filtered by that section.
+  const openSection = (sectionNumber: number) => {
+    nav(`/catalog?section=${sectionNumber}`);
+  };
 
   return (
     <section className="relative w-full bg-night-500 text-base-0">
@@ -290,83 +292,75 @@ function Genplan() {
         <Heading dark>Генплан проекта</Heading>
       </div>
 
-      <div className="relative h-[820px] w-full overflow-hidden">
-        <div ref={bgRef} className="absolute inset-0 -top-[5%] h-[110%]">
-          <img
-            src="/images/hero-genplan.png"
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        </div>
+      {/* Live genplan canvas — same aerial + admin overlays as /genplan, but with
+        * single-tap navigation straight to the catalog (no intermediate panel). */}
+      <div
+        className="relative w-full overflow-hidden"
+        style={{ aspectRatio: "1920 / 900" }}
+      >
+        <img
+          src="/images/hero-genplan.png"
+          alt="Генплан комплекса"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
 
-        {/* Infrastructure / section chips overlay */}
-        <div className="absolute inset-0">
-          {labels.map((l, i) => (
-            <Reveal
-              key={`${l.primary}-${i}`}
-              mode="zoom"
-              delay={i * 60}
-              className="absolute"
-              style={{ left: `${l.x}%`, top: `${l.y}%`, transform: "translate(-50%, -50%)" }}
-            >
-              <InfraChip primary={l.primary} secondary={l.secondary} />
-            </Reveal>
-          ))}
-        </div>
+        {/* Admin-drawn overlays — same as on /genplan */}
+        <OverlayLayer
+          scope="genplan"
+          labelOffsets={{ "5": [40, 0] }}
+          onPick={(o) => {
+            const num = Number(o.entityId);
+            if (!Number.isNaN(num)) openSection(num);
+          }}
+        />
 
-        {/* Bottom controls — toggles + CTA */}
-        <div className="absolute bottom-10 left-20 right-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ToggleChip active>инфраструктура</ToggleChip>
-            <ToggleChip>3d-тур</ToggleChip>
+        {/* Static fallback section chips — only when API replied with no overlays */}
+        {!loading && overlays.length === 0 && (
+          <div className="absolute inset-0">
+            {house.sections.map((s, i) => {
+              const pos =
+                GENPLAN_MARKERS[s.number] ?? { x: 200 + s.number * 200, y: 400 };
+              // Convert pixel positions (designed for 1920×900 scene) to percent so
+              // the embed scales correctly with the responsive aspect-ratio box.
+              const xPct = (pos.x / 1920) * 100;
+              const yPct = (pos.y / 900) * 100;
+              return (
+                <Reveal
+                  key={s.id}
+                  mode="zoom"
+                  delay={i * 60}
+                  className="absolute"
+                  style={{
+                    left: `${xPct}%`,
+                    top: `${yPct}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
+                  <Pressable
+                    onClick={() => openSection(s.number)}
+                    rippleColor="rgba(255,255,255,0.18)"
+                    className="flex items-center gap-[6px] bg-night-500/95 px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-base-0 backdrop-blur-md"
+                    style={{ height: 22, borderRadius: 3 }}
+                  >
+                    <span>{s.number} СЕКЦИЯ</span>
+                    <span className="text-base-0/55">•</span>
+                    <span className="text-base-0/55">{s.apartmentCount} КВ.</span>
+                  </Pressable>
+                </Reveal>
+              );
+            })}
           </div>
-          <PrimaryButton onClick={() => nav("/genplan")}>Открыть генплан</PrimaryButton>
+        )}
+
+        {/* Bottom CTA — full kiosk view */}
+        <div className="absolute bottom-10 right-10">
+          <PrimaryButton onClick={() => nav("/genplan")}>
+            Открыть полный генплан
+          </PrimaryButton>
         </div>
       </div>
     </section>
-  );
-}
-
-/**
- * Static chip shared between About → Genplan block and the live OverlayLayer.
- * Dark Imperial Night background, white primary text, 55% white secondary.
- * Matches Figma component «Hint / Infra label» — height 28px, padding 6px 12px.
- */
-export function InfraChip({
-  primary,
-  secondary,
-}: {
-  primary: string;
-  secondary?: string;
-}) {
-  return (
-    <span className="inline-flex h-[22px] items-center bg-night-500/95 px-[9px] font-sans text-[11px] font-medium uppercase tracking-[0.08em] text-base-0 backdrop-blur-md">
-      <span>{primary}</span>
-      {secondary && (
-        <>
-          <span className="mx-[6px] text-base-0/55">•</span>
-          <span className="text-base-0/55">{secondary}</span>
-        </>
-      )}
-    </span>
-  );
-}
-
-function ToggleChip({
-  children,
-  active = false,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-}) {
-  return (
-    <span
-      className={`flex h-12 items-center gap-3 px-5 font-sans text-small font-medium uppercase tracking-[0.15em] backdrop-blur-md ${active ? "bg-base-0 text-base-800" : "bg-base-0/15 text-base-0"}`}
-    >
-      <span className={`h-2 w-2 ${active ? "bg-accent" : "bg-base-0/40"}`} />
-      {children}
-    </span>
   );
 }
 
