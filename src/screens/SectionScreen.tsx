@@ -69,7 +69,7 @@ export function SectionScreen() {
         }}
       />
 
-      {/* Section title (top-left) */}
+      {/* Section title (top-left) — Unbounded H5 UPPER 32px per Figma 13558:78061 */}
       <div className="absolute left-10 top-32 z-10 text-base-0">
         <Reveal mode="up">
           <p className="font-sans text-upper uppercase tracking-[0.25em] text-base-0/70">
@@ -77,7 +77,7 @@ export function SectionScreen() {
           </p>
         </Reveal>
         <Reveal mode="up" delay={100}>
-          <h2 className="mt-2 font-display text-[64px] font-semibold leading-none">
+          <h2 className="mt-2 font-display text-[32px] font-semibold uppercase leading-none tracking-[0.02em]">
             {section.number} секция
           </h2>
         </Reveal>
@@ -88,11 +88,11 @@ export function SectionScreen() {
         </Reveal>
       </div>
 
-      {/* Room filter (bottom-left) */}
+      {/* Room filter (bottom-left) — sharp-corner chips per Figma */}
       <RoomFilter
         value={filter}
         onChange={setFilter}
-        className="absolute bottom-10 left-10 z-10 bg-base-0/95 p-2 shadow-card backdrop-blur-md"
+        className="absolute bottom-10 left-10 z-10"
       />
     </div>
   );

@@ -31,10 +31,11 @@ function FilterChip({
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  // Sharp corners per Figma — Imperial Night/500 for active, white + 1px border for inactive.
   return (
     <button
       onClick={onClick}
-      className={`h-12 rounded-full px-6 font-sans text-body font-medium transition-colors ${
+      className={`h-12 px-5 font-sans text-body font-medium transition-colors ${
         active
           ? "bg-night-500 text-base-0"
           : "border border-base-200 bg-base-0 text-base-800 hover:border-base-600"
