@@ -4,6 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
 import { GenplanCanvas } from "@/components/GenplanCanvas";
+import { AboutMenu } from "@/components/AboutMenu";
 import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
@@ -46,6 +47,8 @@ export function AboutScreen() {
         <Documents />
         <PageFooter />
       </div>
+
+      <AboutMenu />
     </div>
   );
 }
@@ -172,7 +175,7 @@ function PageHeader() {
 
 function Hero() {
   return (
-    <section className={`${PAGE_PAD} py-24`}>
+    <section id="hero" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-2 gap-16">
         <div>
           <Reveal mode="up">
@@ -186,7 +189,7 @@ function Hero() {
           <Reveal mode="up" delay={120}>
             <dl className="mt-16 divide-y divide-base-200 border-t border-base-200">
               <MetaRow label="Класс жилья">Премиум</MetaRow>
-              <MetaRow label="Срок сдачи">IV кв. 2029 г.</MetaRow>
+              <MetaRow label="Срок сдачи" dim>IV кв. 2029 г.</MetaRow>
               <MetaRow label="Адрес">г. Москва, ул. Викторенко, 16</MetaRow>
               <MetaRow label="О проекте">
                 МАСТЕРС у метро Аэропорт — ансамбль разновысотных секций от 8 до 25 этажей.
@@ -224,11 +227,23 @@ function Hero() {
   );
 }
 
-function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
+function MetaRow({
+  label,
+  children,
+  dim = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  dim?: boolean;
+}) {
   return (
     <div className="grid grid-cols-[200px_1fr] gap-8 py-5">
       <dt className="font-sans text-small text-base-600">{label}</dt>
-      <dd className="font-sans text-body font-medium leading-relaxed text-base-800">{children}</dd>
+      <dd
+        className={`font-sans text-body font-medium leading-relaxed ${dim ? "text-base-200" : "text-base-800"}`}
+      >
+        {children}
+      </dd>
     </div>
   );
 }
@@ -267,7 +282,7 @@ function CtaTile({
 function Genplan() {
   const nav = useNavigate();
   return (
-    <section className="relative w-full bg-night-500 text-base-0">
+    <section id="genplan" className="relative w-full bg-night-500 text-base-0">
       <div className={`${PAGE_PAD} pb-16 pt-24`}>
         <Heading dark>Генплан проекта</Heading>
       </div>
@@ -317,7 +332,7 @@ function Genplan() {
 function Tour3d() {
   const nav = useNavigate();
   return (
-    <section className={`${PAGE_PAD} py-24`}>
+    <section id="tour" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[1fr_1.4fr] items-start gap-16">
         <div>
           <Reveal mode="up">
@@ -388,7 +403,7 @@ function SpecialFormats() {
     },
   ];
   return (
-    <section className={`${PAGE_PAD} py-24`}>
+    <section id="special-formats" className={`${PAGE_PAD} py-24`}>
       <div className="mb-16">
         <Reveal mode="up">
           <SectionLabel>Архитектура и форматы</SectionLabel>
@@ -647,7 +662,7 @@ function pluralize(n: number, forms: [string, string, string]): string {
 
 function Engineering() {
   return (
-    <section className="relative w-full bg-night-500 text-base-0">
+    <section id="engineering" className="relative w-full bg-night-500 text-base-0">
       <div className="grid grid-cols-[1.1fr_1fr] gap-16">
         <div className={`${PAGE_PAD} py-24`}>
           <Reveal mode="up">
@@ -708,7 +723,7 @@ function Construction() {
     "Начало работ по формированию ландшафта.",
   ];
   return (
-    <section className={`${PAGE_PAD} py-24`}>
+    <section id="construction" className={`${PAGE_PAD} py-24`}>
       <Reveal mode="up">
         <SectionLabel>Общий статус</SectionLabel>
       </Reveal>
@@ -773,7 +788,7 @@ function Office() {
   // a self-contained office tile pinned to the bottom-right corner — matches
   // cg-projects.ru/about layout.
   return (
-    <section className="relative w-full bg-base-100">
+    <section id="office" className="relative w-full bg-base-100">
       {/* Match the original image aspect ratio (1692×991) so the map is shown
         * in full — no top/bottom crop. */}
       <div
@@ -836,7 +851,7 @@ function Office() {
 
 function Documents() {
   return (
-    <section className={`${PAGE_PAD} py-24`}>
+    <section id="documents" className={`${PAGE_PAD} py-24`}>
       <div className="border-t border-base-200 pt-16">
         <Reveal mode="up">
           <SectionLabel>Документы</SectionLabel>
