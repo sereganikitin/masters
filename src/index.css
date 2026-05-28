@@ -48,7 +48,23 @@
   font-display: swap;
 }
 
-/* RF Dewi Expanded Ultrabold — only for very large hero titles */
+/* RF Dewi Expanded — heading & eyebrow font.
+ * Three weights as used in the Figma reference: Semibold (large H1),
+ * Bold (mid headings, eyebrows w/ less emphasis), Ultrabold (small eyebrows). */
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "RF Dewi Expanded";
+  src: url("/fonts/RFDewiExpanded-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 @font-face {
   font-family: "RF Dewi Expanded";
   src: url("/fonts/RFDewiExpanded-Ultrabold.woff2") format("woff2");

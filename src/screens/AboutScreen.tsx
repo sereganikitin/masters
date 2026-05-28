@@ -175,7 +175,7 @@ function Hero() {
       <div className="grid grid-cols-2 gap-16">
         <div>
           <Reveal mode="up">
-            <h1 className="font-sans text-[64px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
+            <h1 className="font-display text-[36px] font-bold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
               {titleLines.map((line, i) => (
                 <span key={i}>
                   {line}
@@ -338,7 +338,7 @@ function Tour3d() {
     <section id="tour" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[280px_1fr_280px] items-start gap-12">
         <Reveal mode="up">
-          <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
+          <p className="flex items-center gap-3 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-800">
             <span className="inline-block h-2.5 w-2.5 bg-base-800" />
             {c.eyebrow}
           </p>
@@ -442,7 +442,7 @@ function SpecialFormats() {
   return (
     <section id="special-formats" className={`${PAGE_PAD} pb-24 pt-24`}>
       <Reveal mode="up">
-        <h2 className="border-b border-base-800 pb-6 font-sans text-[120px] font-semibold uppercase leading-[0.9] tracking-[-0.02em] text-base-800">
+        <h2 className="border-b border-base-800 pb-6 font-display text-[64px] font-semibold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
           Особые форматы
         </h2>
       </Reveal>
@@ -452,14 +452,14 @@ function SpecialFormats() {
           <Reveal key={`${it.tag}-${i}`} mode="up" delay={i * 100}>
             <article className="grid grid-cols-[180px_1fr_560px] items-stretch gap-12 border-b border-base-200 py-12">
               {/* Left — marker + number */}
-              <div className="flex items-start gap-3 pt-1 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
+              <div className="flex items-start gap-3 pt-1 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-800">
                 <span className="mt-[3px] inline-block h-2.5 w-2.5 bg-base-800" />
                 {it.tag}
               </div>
 
               {/* Middle — title at top, body + link at bottom */}
               <div className="flex flex-col">
-                <h3 className="font-sans text-[22px] font-semibold uppercase leading-tight tracking-[0.02em] text-base-800">
+                <h3 className="font-display text-[24px] font-bold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
                   {it.title}
                 </h3>
                 <div className="mt-auto pt-24">
@@ -823,7 +823,7 @@ function Engineering() {
       <div className={`grid grid-cols-[1.4fr_1fr] gap-16 ${PAGE_PAD} py-24`}>
         <div className="flex min-h-[680px] flex-col">
           <Reveal mode="up">
-            <h2 className="font-sans text-[120px] font-semibold uppercase leading-[0.9] tracking-[-0.02em] text-base-0">
+            <h2 className="font-display text-[64px] font-semibold uppercase leading-[1.1] tracking-[-0.02em] text-base-0">
               {headingLines.map((line, i) => (
                 <span key={i}>
                   {line}
@@ -844,7 +844,7 @@ function Engineering() {
 
         <div className="flex flex-col">
           <Reveal mode="up" delay={120}>
-            <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-0">
+            <p className="flex items-center gap-3 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-0">
               <span className="inline-block h-2.5 w-2.5 bg-base-0" />
               {c.eyebrow}
             </p>
@@ -904,7 +904,7 @@ function Construction() {
 
         <div className="flex flex-col py-24 pr-12">
           <Reveal mode="up">
-            <h2 className="font-sans text-[48px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
+            <h2 className="font-display text-[36px] font-bold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
               Динамика
               <br />
               строительства
@@ -1026,7 +1026,7 @@ function Office() {
             </div>
 
             <div className="flex flex-col px-8 pb-8 pt-7">
-              <h3 className="font-sans text-[22px] font-semibold uppercase leading-tight tracking-[0.02em]">
+              <h3 className="font-display text-[20px] font-bold uppercase leading-[1.1] tracking-[-0.02em]">
                 {titleLines.map((l, i) => (
                   <span key={i}>
                     {l}
@@ -1063,7 +1063,7 @@ function Documents() {
     <section id="documents" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[280px_1fr_280px] items-start gap-12">
         <Reveal mode="up">
-          <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
+          <p className="flex items-center gap-3 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-800">
             <span className="inline-block h-2.5 w-2.5 bg-base-800" />
             {c.eyebrow}
           </p>

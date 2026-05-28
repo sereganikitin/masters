@@ -51,11 +51,11 @@ export function ConstructionGalleryScreen() {
       >
         <header className={`${PAGE_PAD} pb-12 pt-16`}>
           <Reveal mode="up">
-            <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
+            <p className="flex items-center gap-3 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-800">
               <span className="inline-block h-2.5 w-2.5 bg-base-800" />
               Общий статус
             </p>
-            <h1 className="mt-6 font-sans text-[64px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
+            <h1 className="mt-6 font-display text-[64px] font-semibold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
               Динамика
               <br />
               строительства
@@ -106,11 +106,11 @@ function EntryCard({ entry }: { entry: ConstructionEntry }) {
     <article className="grid grid-cols-[1fr_1.4fr] gap-12 border-t border-base-200 pt-12">
       {/* Left — period + text */}
       <div className="flex flex-col">
-        <p className="font-sans text-upper uppercase tracking-[0.3em] text-base-600">
+        <p className="font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-600">
           {period}
         </p>
         {entry.title && (
-          <h2 className="mt-4 font-sans text-[36px] font-semibold uppercase leading-[1.05] tracking-[-0.01em] text-base-800">
+          <h2 className="mt-4 font-display text-[36px] font-bold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
             {entry.title}
           </h2>
         )}

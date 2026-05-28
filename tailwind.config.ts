@@ -23,8 +23,12 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'RF Dewi Extended'", "system-ui", "sans-serif"],
-        displayExpanded: ["'RF Dewi Expanded'", "'RF Dewi Extended'", "system-ui", "sans-serif"],
+        // Headings & eyebrows — RF Dewi Expanded (matches Figma «О проекте»
+        // styles). We only ship the Ultrabold cut, so all weights render at
+        // 800 via the font-face declaration in index.css.
+        display: ["'RF Dewi Expanded'", "'RF Dewi Extended'", "system-ui", "sans-serif"],
+        displayExtended: ["'RF Dewi Extended'", "system-ui", "sans-serif"],
+        // Body text — Graphik LC Web (multiple weights available).
         sans: ["'Graphik LC Web'", "system-ui", "sans-serif"],
       },
       fontSize: {

@@ -69,11 +69,11 @@ export function AboutMenu() {
       >
         {/* Logo block */}
         <div className="flex items-center justify-between px-9 pb-2 pt-9">
-          <span className="font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
+          <span className="font-display text-[28px] font-semibold uppercase leading-none tracking-[-0.02em]">
             МАСТЕРС
           </span>
           <span className="grid h-9 w-9 place-items-center border border-base-0 text-base-0">
-            <span className="font-display text-[11px] font-bold leading-none tracking-[0.05em]">
+            <span className="font-display text-[11px] font-bold leading-none tracking-[-0.02em]">
               CG
             </span>
           </span>
