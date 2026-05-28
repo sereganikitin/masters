@@ -90,7 +90,7 @@ export const SITE_HEADER_DEFAULTS: SiteHeaderContent = {
 };
 
 export const ABOUT_HERO_DEFAULTS: AboutHeroContent = {
-  title: "Премиальный\nдом МАСТЕРС",
+  title: "Премиальный дом\nМАСТЕРС",
   metaRows: [
     { label: "Класс жилья", value: "Премиум" },
     { label: "Срок сдачи", value: "IV кв. 2029 г.", dim: true },

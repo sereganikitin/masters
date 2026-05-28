@@ -263,10 +263,12 @@ function CtaTile({ tile }: { tile: CtaTileType }) {
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="font-display text-[14px] font-semibold uppercase tracking-[0.1em] text-base-800">
+        <p className="font-sans text-[14px] font-medium tracking-[-0.006em] text-base-800">
           {tile.title}
         </p>
-        <p className="font-sans text-small text-base-600">{tile.sub}</p>
+        <p className="font-sans text-[12px] tracking-[-0.004em] text-base-600">
+          {tile.sub}
+        </p>
       </div>
     </Pressable>
   );
