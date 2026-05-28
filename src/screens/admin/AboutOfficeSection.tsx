@@ -2,6 +2,7 @@ import { useCmsSection } from "@/lib/useCmsSection";
 import {
   FormGroup,
   ImageField,
+  NumberField,
   SaveBar,
   TextAreaField,
   TextField,
@@ -15,6 +16,9 @@ export interface AboutOfficeContent {
   phone: string;
   photo: string;
   mapImage: string;
+  mapLat: number;
+  mapLng: number;
+  mapZoom: number;
   ctaLabel: string;
   routeUrl: string;
 }
@@ -25,6 +29,9 @@ const DEFAULTS: AboutOfficeContent = {
   phone: "+7 (495) 021-11-11",
   photo: "/images/about/office.png",
   mapImage: "/images/about/office-map.png",
+  mapLat: 55.8013,
+  mapLng: 37.5310,
+  mapZoom: 16,
   ctaLabel: "Проложить маршрут",
   routeUrl: "https://yandex.ru/maps/?text=Москва Проезд Аэропорта 8",
 };
@@ -66,18 +73,46 @@ export function AboutOfficeSection() {
           />
         </FormGroup>
 
-        <FormGroup title="Фото и карта">
+        <FormGroup title="Фото офиса">
           <ImageField
             label="Фото офиса (вверху карточки)"
             value={draft.photo}
             onChange={(v) => update({ photo: v })}
             recommended="880×495 (16:9)"
           />
+        </FormGroup>
+
+        <FormGroup
+          title="Карта района"
+          description="Живая Яндекс-карта с маркером в центре. Подскажу координаты: открой Яндекс-карты, кликни правой кнопкой на нужную точку → «Что здесь?» → внизу появятся coordinates вида 55.8013, 37.5310 — первое значение это Lat, второе Lng."
+        >
+          <div className="grid grid-cols-3 gap-4">
+            <NumberField
+              label="Latitude"
+              value={draft.mapLat}
+              onChange={(v) => update({ mapLat: v })}
+              hint="55.8013 и т.п."
+            />
+            <NumberField
+              label="Longitude"
+              value={draft.mapLng}
+              onChange={(v) => update({ mapLng: v })}
+              hint="37.5310 и т.п."
+            />
+            <NumberField
+              label="Zoom"
+              value={draft.mapZoom}
+              onChange={(v) => update({ mapZoom: v })}
+              min={1}
+              max={19}
+              hint="14–17 — городской уровень"
+            />
+          </div>
           <ImageField
-            label="Карта района (фон секции)"
+            label="Резервная картинка (если карта не загрузится)"
             value={draft.mapImage}
             onChange={(v) => update({ mapImage: v })}
-            recommended="1692×991 (≈ 16:9, тёмный стиль)"
+            recommended="1692×991, тёмный стиль"
           />
         </FormGroup>
 

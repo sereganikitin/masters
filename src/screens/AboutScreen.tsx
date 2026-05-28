@@ -1014,21 +1014,44 @@ function Office() {
     if (!c.routeUrl) return;
     window.open(c.routeUrl, "_blank", "noopener,noreferrer");
   };
+  // Live Yandex map widget — no API key needed for this iframe endpoint.
+  // Falls back to the static mapImage if coords are missing.
+  const hasCoords = Number.isFinite(c.mapLat) && Number.isFinite(c.mapLng);
+  const yandexSrc = hasCoords
+    ? `https://yandex.ru/map-widget/v1/?ll=${c.mapLng},${c.mapLat}&z=${c.mapZoom || 16}&l=map`
+    : null;
   return (
     <section id="office" className="relative w-full bg-base-100">
       <div
         className="relative w-full overflow-hidden bg-night-500"
         style={{ aspectRatio: "1692 / 991" }}
       >
-        {c.mapImage && (
-          <img
-            src={c.mapImage}
-            alt="Карта района офиса продаж"
-            className="absolute inset-0 h-full w-full object-contain opacity-95"
+        {yandexSrc ? (
+          <iframe
+            src={yandexSrc}
+            title="Карта района офиса продаж"
+            loading="lazy"
+            allowFullScreen
+            className="absolute inset-0 h-full w-full border-0"
+            // pointer-events: none keeps the map static — it's a backdrop, not
+            // an interactive widget. Filter darkens + desaturates so the map
+            // blends with the Imperial Night palette.
+            style={{
+              pointerEvents: "none",
+              filter: "grayscale(100%) brightness(0.55) contrast(1.2)",
+            }}
           />
+        ) : (
+          c.mapImage && (
+            <img
+              src={c.mapImage}
+              alt="Карта района офиса продаж"
+              className="absolute inset-0 h-full w-full object-contain opacity-95"
+            />
+          )
         )}
 
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]">
           <div className="grid h-12 w-12 place-items-center bg-base-800 text-base-0 shadow-card">
             <span className="font-display text-[13px] font-bold leading-none tracking-[0.05em]">
               CG

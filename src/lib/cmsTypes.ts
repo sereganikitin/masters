@@ -61,7 +61,14 @@ export interface AboutOfficeContent {
   address: string;
   phone: string;
   photo: string;
+  /** Fallback static map image if lat/lng aren't set. */
   mapImage: string;
+  /** Latitude of the office (used to centre the embedded Yandex map). */
+  mapLat: number;
+  /** Longitude of the office. */
+  mapLng: number;
+  /** Yandex map zoom (typically 14–17 for city-level views). */
+  mapZoom: number;
   ctaLabel: string;
   routeUrl: string;
 }
@@ -156,6 +163,11 @@ export const ABOUT_OFFICE_DEFAULTS: AboutOfficeContent = {
   phone: "+7 (495) 021-11-11",
   photo: "/images/about/office.png",
   mapImage: "/images/about/office-map.png",
+  // Approximate coords for «Проезд Аэропорта, 8» — район метро Аэропорт.
+  // Точно подстроить можно в админке.
+  mapLat: 55.8013,
+  mapLng: 37.5310,
+  mapZoom: 16,
   ctaLabel: "Проложить маршрут",
   routeUrl: "https://yandex.ru/maps/?text=Москва Проезд Аэропорта 8",
 };
