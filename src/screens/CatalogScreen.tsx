@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable } from "@/components/Pressable";
 import { Reveal } from "@/components/Reveal";
 import { PlanImage } from "@/components/PlanImage";
+import { RangeSlider } from "@/components/RangeSlider";
 import { IconClose } from "@/components/Icon";
 import {
   getHouse,
@@ -14,7 +15,15 @@ import {
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
 
-type SortKey = "price-asc" | "price-desc" | "area-asc" | "area-desc" | "floor-asc" | "floor-desc";
+type SortKey =
+  | "price-asc"
+  | "price-desc"
+  | "area-asc"
+  | "area-desc"
+  | "floor-asc"
+  | "floor-desc";
+
+type PerkKey = "cornerGlazing" | "largeKitchenLivingRoom" | "masterBedroom";
 
 interface Filters {
   room: Set<RoomType>;
@@ -26,7 +35,7 @@ interface Filters {
   minFloor: number;
   maxFloor: number;
   decoration: "any" | "raw" | "finished";
-  perks: Set<"cornerGlazing" | "largeKitchenLivingRoom" | "masterBedroom">;
+  perks: Set<PerkKey>;
 }
 
 function getDefaultFilters(all: Apartment[]): Filters {
@@ -46,6 +55,12 @@ function getDefaultFilters(all: Apartment[]): Filters {
     perks: new Set(),
   };
 }
+
+const PERK_LABELS: Record<PerkKey, string> = {
+  cornerGlazing: "Угловое остекление",
+  largeKitchenLivingRoom: "Кухня-гостиная",
+  masterBedroom: "Мастер-спальня",
+};
 
 export function CatalogScreen() {
   const nav = useNavigate();
@@ -106,16 +121,19 @@ export function CatalogScreen() {
   }, []);
 
   const filtered = useMemo(() => {
-    let list = allApartments.filter((a) => {
+    const list = allApartments.filter((a) => {
       if (filters.room.size > 0 && !filters.room.has(a.roomType)) return false;
       if (filters.sections.size > 0 && !filters.sections.has(a.sectionNumber)) return false;
       if (a.price < filters.minPrice || a.price > filters.maxPrice) return false;
       if (a.area < filters.minArea || a.area > filters.maxArea) return false;
       if (a.floor < filters.minFloor || a.floor > filters.maxFloor) return false;
-      if (filters.decoration === "raw" && !a.decoration.toLowerCase().includes("без")) return false;
-      if (filters.decoration === "finished" && a.decoration.toLowerCase().includes("без")) return false;
+      if (filters.decoration === "raw" && !a.decoration.toLowerCase().includes("без"))
+        return false;
+      if (filters.decoration === "finished" && a.decoration.toLowerCase().includes("без"))
+        return false;
       if (filters.perks.has("cornerGlazing") && !a.features.cornerGlazing) return false;
-      if (filters.perks.has("largeKitchenLivingRoom") && !a.features.largeKitchenLivingRoom) return false;
+      if (filters.perks.has("largeKitchenLivingRoom") && !a.features.largeKitchenLivingRoom)
+        return false;
       if (filters.perks.has("masterBedroom") && !a.features.masterBedroom) return false;
       return true;
     });
@@ -133,18 +151,17 @@ export function CatalogScreen() {
 
   const reset = () => setFilters(bounds);
 
+  // Build a list of "active filter" chips that the user can remove individually.
+  const activeChips = buildActiveChips(filters, bounds, setFilters);
+  const anyFilterActive = activeChips.length > 0;
+
   return (
-    <div className="relative h-full w-full bg-base-100 text-base-800">
-      {/* Close */}
+    <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
+      {/* Close button — global, always visible */}
       <Pressable
         onClick={() => {
-          // Return to wherever we came from (Genplan / Hero / etc).
-          // Falls back to Hero if there's no history (direct entry).
-          if (window.history.length > 1) {
-            nav(-1);
-          } else {
-            nav("/");
-          }
+          if (window.history.length > 1) nav(-1);
+          else nav("/");
         }}
         rippleColor="rgba(0,0,0,0.12)"
         className="absolute right-9 top-9 z-50 grid h-14 w-14 place-items-center rounded-full bg-base-0 text-base-800 shadow-card"
@@ -153,23 +170,18 @@ export function CatalogScreen() {
         <IconClose size={22} />
       </Pressable>
 
-      <div className="grid h-full w-full grid-cols-[400px_1fr]">
-        {/* Sidebar */}
-        <aside className="flex h-full min-h-0 flex-col border-r border-base-200 bg-base-0">
-          <div className="flex-shrink-0 px-8 pb-6 pt-10">
-            <p className="font-sans text-upper uppercase tracking-[0.3em] text-base-600">
-              Каталог квартир
-            </p>
-            <h1 className="mt-2 font-display text-[34px] font-semibold leading-none tracking-tight">
-              ЖК МАСТЕРС
-            </h1>
-          </div>
+      <div
+        className="h-full w-full overflow-y-auto"
+        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
+      >
+        {/* ───────────── Title + filter bar ───────────── */}
+        <header className="px-12 pb-8 pt-12">
+          <h1 className="font-display text-[64px] font-semibold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
+            Квартиры
+          </h1>
 
-          <div
-            className="min-h-0 flex-1 overflow-y-auto px-8 pb-8"
-            style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
-          >
-            <FilterGroup title="Тип квартиры">
+          <div className="mt-10 grid grid-cols-3 gap-8">
+            <FilterColumn title="Параметры квартиры">
               <ChipRow>
                 {ROOM_TYPES.map((rt) => {
                   const active = filters.room.has(rt.key);
@@ -190,10 +202,10 @@ export function CatalogScreen() {
                   );
                 })}
               </ChipRow>
-            </FilterGroup>
+            </FilterColumn>
 
-            <FilterGroup title="Стоимость, ₽">
-              <RangeInputs
+            <FilterColumn title="Стоимость, ₽">
+              <RangeSlider
                 min={bounds.minPrice}
                 max={bounds.maxPrice}
                 value={[filters.minPrice, filters.maxPrice]}
@@ -203,10 +215,10 @@ export function CatalogScreen() {
                   setFilters((f) => ({ ...f, minPrice: lo, maxPrice: hi }))
                 }
               />
-            </FilterGroup>
+            </FilterColumn>
 
-            <FilterGroup title="Площадь, м²">
-              <RangeInputs
+            <FilterColumn title="Площадь, м²">
+              <RangeSlider
                 min={bounds.minArea}
                 max={bounds.maxArea}
                 value={[filters.minArea, filters.maxArea]}
@@ -216,22 +228,11 @@ export function CatalogScreen() {
                   setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
                 }
               />
-            </FilterGroup>
+            </FilterColumn>
+          </div>
 
-            <FilterGroup title="Этаж">
-              <RangeInputs
-                min={bounds.minFloor}
-                max={bounds.maxFloor}
-                value={[filters.minFloor, filters.maxFloor]}
-                step={1}
-                format={(v) => String(v)}
-                onChange={([lo, hi]) =>
-                  setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
-                }
-              />
-            </FilterGroup>
-
-            <FilterGroup title="Секция">
+          <div className="mt-8 grid grid-cols-[1fr_1fr] gap-8">
+            <FilterColumn title="Секция">
               <ChipRow>
                 {house.sections.map((s) => {
                   const active = filters.sections.has(s.number);
@@ -252,110 +253,124 @@ export function CatalogScreen() {
                   );
                 })}
               </ChipRow>
-            </FilterGroup>
+            </FilterColumn>
 
-            <FilterGroup title="Отделка">
-              <ChipRow>
-                {(
-                  [
-                    ["any", "Любая"],
-                    ["raw", "Без отделки"],
-                    ["finished", "С отделкой"],
-                  ] as const
-                ).map(([k, label]) => (
-                  <Chip
-                    key={k}
-                    active={filters.decoration === k}
-                    onClick={() => setFilters((f) => ({ ...f, decoration: k }))}
-                  >
-                    {label}
-                  </Chip>
-                ))}
-              </ChipRow>
-            </FilterGroup>
-
-            <FilterGroup title="Особенности">
-              <div className="flex flex-col gap-3">
-                {(
-                  [
-                    ["cornerGlazing", "Угловое остекление"],
-                    ["largeKitchenLivingRoom", "Кухня-гостиная"],
-                    ["masterBedroom", "Мастер-спальня"],
-                  ] as const
-                ).map(([k, label]) => (
-                  <CheckboxRow
-                    key={k}
-                    checked={filters.perks.has(k)}
-                    onChange={(v) =>
-                      setFilters((f) => {
-                        const next = new Set(f.perks);
-                        v ? next.add(k) : next.delete(k);
-                        return { ...f, perks: next };
-                      })
-                    }
-                  >
-                    {label}
-                  </CheckboxRow>
-                ))}
-              </div>
-            </FilterGroup>
+            <FilterColumn title="Этаж">
+              <RangeSlider
+                min={bounds.minFloor}
+                max={bounds.maxFloor}
+                value={[filters.minFloor, filters.maxFloor]}
+                step={1}
+                format={(v) => String(v)}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
+                }
+              />
+            </FilterColumn>
           </div>
 
-          <div className="border-t border-base-200 px-8 py-6">
-            <Pressable
-              onClick={reset}
-              rippleColor="rgba(0,0,0,0.08)"
-              className="h-12 w-full border border-base-200 bg-base-0 font-sans text-body font-medium text-base-800"
-            >
-              Сбросить фильтры
-            </Pressable>
+          {/* Perk + decoration quick-filter chips */}
+          <div className="mt-8 flex flex-wrap items-center gap-2">
+            {(
+              [
+                ["any", "Любая отделка"],
+                ["raw", "Без отделки"],
+                ["finished", "С отделкой"],
+              ] as const
+            ).map(([k, label]) => (
+              <Chip
+                key={k}
+                active={filters.decoration === k}
+                onClick={() => setFilters((f) => ({ ...f, decoration: k }))}
+              >
+                {label}
+              </Chip>
+            ))}
+            <span className="mx-2 inline-block h-6 w-px bg-base-200" aria-hidden />
+            {(Object.keys(PERK_LABELS) as PerkKey[]).map((k) => {
+              const active = filters.perks.has(k);
+              return (
+                <Chip
+                  key={k}
+                  active={active}
+                  onClick={() =>
+                    setFilters((f) => {
+                      const next = new Set(f.perks);
+                      active ? next.delete(k) : next.add(k);
+                      return { ...f, perks: next };
+                    })
+                  }
+                >
+                  {PERK_LABELS[k]}
+                </Chip>
+              );
+            })}
           </div>
-        </aside>
 
-        {/* Results */}
-        <main className="flex h-full min-h-0 flex-col">
-          <div className="flex flex-shrink-0 items-center justify-between border-b border-base-200 bg-base-0 px-12 py-6 pr-28">
-            <div className="font-sans">
-              <span className="font-display text-h4 font-semibold tabular-nums text-base-800">
-                {filtered.length}
-              </span>{" "}
-              <span className="text-base-600">
-                {pluralize(filtered.length, ["квартира", "квартиры", "квартир"])}
-              </span>
+          {/* Active filters row + reset */}
+          {anyFilterActive && (
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-base-200 pt-6">
+              {activeChips.map((c) => (
+                <RemovableChip key={c.key} onRemove={c.remove}>
+                  {c.label}
+                </RemovableChip>
+              ))}
+              <button
+                type="button"
+                onClick={reset}
+                className="ml-auto flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
+              >
+                <CrossIcon />
+                Сбросить все
+              </button>
             </div>
-            <SortSelect value={sort} onChange={setSort} />
-          </div>
+          )}
+        </header>
 
-          <div
-            className="min-h-0 flex-1 overflow-y-auto p-12"
-            style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
-          >
-            {filtered.length === 0 ? (
-              <div className="grid place-items-center py-20 text-center">
-                <div>
-                  <p className="font-display text-h3 text-base-800">Ничего не найдено</p>
-                  <p className="mt-3 font-sans text-body text-base-600">
-                    Попробуйте смягчить фильтры
-                  </p>
-                  <Pressable
-                    onClick={reset}
-                    rippleColor="rgba(0,0,0,0.08)"
-                    className="mt-6 h-12 bg-accent px-8 font-sans text-body font-medium text-base-0"
-                  >
-                    Сбросить
-                  </Pressable>
-                </div>
+        {/* ───────────── Sort + count gray bar ───────────── */}
+        <div className="flex items-center justify-between border-y border-base-200 bg-base-100 px-12 py-5">
+          <SortSelect value={sort} onChange={setSort} />
+          <span className="font-sans text-body text-base-700">
+            Найдено{" "}
+            <span className="font-medium tabular-nums text-base-800">
+              {filtered.length}
+            </span>{" "}
+            {pluralize(filtered.length, ["квартира", "квартиры", "квартир"])}
+          </span>
+        </div>
+
+        {/* ───────────── Cards grid ───────────── */}
+        <main className="px-12 pb-16 pt-8">
+          {filtered.length === 0 ? (
+            <div className="grid place-items-center py-20 text-center">
+              <div>
+                <p className="font-display text-h3 text-base-800">
+                  Ничего не найдено
+                </p>
+                <p className="mt-3 font-sans text-body text-base-600">
+                  Попробуйте смягчить фильтры
+                </p>
+                <Pressable
+                  onClick={reset}
+                  rippleColor="rgba(0,0,0,0.08)"
+                  className="mt-6 h-12 bg-accent px-8 font-sans text-body font-medium text-base-0"
+                >
+                  Сбросить
+                </Pressable>
               </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-5">
-                {filtered.map((apt, i) => (
-                  <Reveal key={apt.id} mode="up" delay={(i % 6) * 60} className="h-full">
-                    <ApartmentCard apt={apt} onClick={() => nav(`/apartment/${apt.id}`)} />
-                  </Reveal>
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-5">
+              {filtered.map((apt, i) => (
+                <Reveal key={apt.id} mode="up" delay={(i % 6) * 60} className="h-full">
+                  <ApartmentCard
+                    apt={apt}
+                    onClick={() => nav(`/apartment/${apt.id}`)}
+                  />
+                </Reveal>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -363,7 +378,113 @@ export function CatalogScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cards
+// Active filter chip builder
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ActiveChip {
+  key: string;
+  label: string;
+  remove: () => void;
+}
+
+function buildActiveChips(
+  filters: Filters,
+  bounds: Filters,
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>,
+): ActiveChip[] {
+  const chips: ActiveChip[] = [];
+
+  filters.room.forEach((rt) =>
+    chips.push({
+      key: `room:${rt}`,
+      label: roomTypeLabel(rt),
+      remove: () =>
+        setFilters((f) => {
+          const next = new Set(f.room);
+          next.delete(rt);
+          return { ...f, room: next };
+        }),
+    }),
+  );
+
+  filters.sections.forEach((n) =>
+    chips.push({
+      key: `section:${n}`,
+      label: `С${n}`,
+      remove: () =>
+        setFilters((f) => {
+          const next = new Set(f.sections);
+          next.delete(n);
+          return { ...f, sections: next };
+        }),
+    }),
+  );
+
+  if (filters.minPrice > bounds.minPrice || filters.maxPrice < bounds.maxPrice) {
+    chips.push({
+      key: "price",
+      label: `${formatPrice(filters.minPrice)} – ${formatPrice(filters.maxPrice)}`,
+      remove: () =>
+        setFilters((f) => ({
+          ...f,
+          minPrice: bounds.minPrice,
+          maxPrice: bounds.maxPrice,
+        })),
+    });
+  }
+
+  if (filters.minArea > bounds.minArea || filters.maxArea < bounds.maxArea) {
+    chips.push({
+      key: "area",
+      label: `${formatArea(filters.minArea)} – ${formatArea(filters.maxArea)}`,
+      remove: () =>
+        setFilters((f) => ({
+          ...f,
+          minArea: bounds.minArea,
+          maxArea: bounds.maxArea,
+        })),
+    });
+  }
+
+  if (filters.minFloor > bounds.minFloor || filters.maxFloor < bounds.maxFloor) {
+    chips.push({
+      key: "floor",
+      label: `Этаж ${filters.minFloor}–${filters.maxFloor}`,
+      remove: () =>
+        setFilters((f) => ({
+          ...f,
+          minFloor: bounds.minFloor,
+          maxFloor: bounds.maxFloor,
+        })),
+    });
+  }
+
+  if (filters.decoration !== "any") {
+    chips.push({
+      key: "decoration",
+      label: filters.decoration === "raw" ? "Без отделки" : "С отделкой",
+      remove: () => setFilters((f) => ({ ...f, decoration: "any" })),
+    });
+  }
+
+  filters.perks.forEach((p) =>
+    chips.push({
+      key: `perk:${p}`,
+      label: PERK_LABELS[p],
+      remove: () =>
+        setFilters((f) => {
+          const next = new Set(f.perks);
+          next.delete(p);
+          return { ...f, perks: next };
+        }),
+    }),
+  );
+
+  return chips;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Apartment card (unchanged from previous design)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }) {
@@ -378,7 +499,10 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
       rippleColor="rgba(0,97,166,0.1)"
       className="flex h-full w-full flex-col bg-base-0 p-6 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
     >
-      <div className="relative w-full overflow-hidden bg-base-100" style={{ aspectRatio: "4 / 3" }}>
+      <div
+        className="relative w-full overflow-hidden bg-base-100"
+        style={{ aspectRatio: "4 / 3" }}
+      >
         <PlanImage
           src={apartmentPlanUrl(apt)}
           alt=""
@@ -425,27 +549,35 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
         <span className="text-base-600">Этаж</span>
         <span className="text-right font-medium text-base-800">{apt.floor}</span>
         <span className="text-base-600">Цена за м²</span>
-        <span className="text-right font-medium text-base-800">{formatPrice(apt.pricePerMeter)}</span>
+        <span className="text-right font-medium text-base-800">
+          {formatPrice(apt.pricePerMeter)}
+        </span>
       </div>
     </Pressable>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Filter controls
+// Filter primitives
 // ─────────────────────────────────────────────────────────────────────────────
 
-function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterColumn({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="mt-8 first:mt-0">
-      <h3 className="font-sans text-upper uppercase tracking-[0.2em] text-base-600">{title}</h3>
-      <div className="mt-3">{children}</div>
+    <div className="flex flex-col">
+      <p className="font-sans text-small text-base-600">{title}</p>
+      <div className="mt-3 flex-1">{children}</div>
     </div>
   );
 }
 
 function ChipRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-1.5">{children}</div>;
+  return <div className="flex flex-wrap gap-2">{children}</div>;
 }
 
 function Chip({
@@ -461,8 +593,10 @@ function Chip({
     <Pressable
       onClick={onClick}
       rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
-      className={`h-10 px-4 font-sans text-body font-medium transition-colors ${
-        active ? "bg-night-500 text-base-0" : "border border-base-200 bg-base-0 text-base-800"
+      className={`flex h-10 items-center px-4 font-sans text-body font-medium transition-colors ${
+        active
+          ? "bg-night-500 text-base-0"
+          : "border border-base-200 bg-base-0 text-base-800"
       }`}
     >
       {children}
@@ -470,85 +604,49 @@ function Chip({
   );
 }
 
-function RangeInputs({
-  min,
-  max,
-  value,
-  step,
-  onChange,
-  format,
-}: {
-  min: number;
-  max: number;
-  value: [number, number];
-  step: number;
-  onChange: (v: [number, number]) => void;
-  format: (v: number) => string;
-}) {
-  const [lo, hi] = value;
-  return (
-    <div>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          value={lo}
-          min={min}
-          max={hi}
-          step={step}
-          onChange={(e) => onChange([clamp(Number(e.target.value), min, hi), hi])}
-          className="h-11 w-full border border-base-200 bg-base-0 px-3 font-sans text-body text-base-800 outline-none focus:border-accent"
-        />
-        <span className="text-base-600">—</span>
-        <input
-          type="number"
-          value={hi}
-          min={lo}
-          max={max}
-          step={step}
-          onChange={(e) => onChange([lo, clamp(Number(e.target.value), lo, max)])}
-          className="h-11 w-full border border-base-200 bg-base-0 px-3 font-sans text-body text-base-800 outline-none focus:border-accent"
-        />
-      </div>
-      <div className="mt-2 flex items-center justify-between font-sans text-small text-base-600">
-        <span>{format(lo)}</span>
-        <span>{format(hi)}</span>
-      </div>
-    </div>
-  );
-}
-
-function CheckboxRow({
-  checked,
-  onChange,
+function RemovableChip({
+  onRemove,
   children,
 }: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
+  onRemove: () => void;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
-      onClick={() => onChange(!checked)}
-      className="tap-surface flex items-center gap-3 text-left"
+      onClick={onRemove}
+      className="flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
     >
-      <span
-        className={`grid h-6 w-6 place-items-center border transition-colors ${
-          checked ? "border-accent bg-accent text-base-0" : "border-base-200 bg-base-0"
-        }`}
-      >
-        {checked && (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        )}
-      </span>
-      <span className="font-sans text-body text-base-800">{children}</span>
+      <CrossIcon />
+      {children}
     </button>
   );
 }
 
-function SortSelect({ value, onChange }: { value: SortKey; onChange: (k: SortKey) => void }) {
+function CrossIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M2 2l8 8M10 2l-8 8" />
+    </svg>
+  );
+}
+
+function SortSelect({
+  value,
+  onChange,
+}: {
+  value: SortKey;
+  onChange: (k: SortKey) => void;
+}) {
   const options: { k: SortKey; label: string }[] = [
     { k: "price-asc", label: "Сначала дешевле" },
     { k: "price-desc", label: "Сначала дороже" },
@@ -558,12 +656,11 @@ function SortSelect({ value, onChange }: { value: SortKey; onChange: (k: SortKey
     { k: "floor-desc", label: "Выше этаж" },
   ];
   return (
-    <label className="flex h-11 items-center gap-3 border border-base-200 bg-base-0 px-4 font-sans text-body font-medium text-base-800">
-      <span className="text-base-600">Сортировка</span>
+    <label className="flex items-center gap-3 font-sans text-body font-medium text-base-800">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as SortKey)}
-        className="bg-transparent font-medium outline-none"
+        className="cursor-pointer bg-transparent font-medium outline-none"
       >
         {options.map((o) => (
           <option key={o.k} value={o.k}>
@@ -573,11 +670,6 @@ function SortSelect({ value, onChange }: { value: SortKey; onChange: (k: SortKey
       </select>
     </label>
   );
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  if (Number.isNaN(v)) return lo;
-  return Math.min(Math.max(v, lo), hi);
 }
 
 function pluralize(n: number, forms: [string, string, string]): string {

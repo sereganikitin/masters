@@ -73,6 +73,44 @@
   font-display: swap;
 }
 
+/* Dual-handle range slider — thumb styling for webkit + moz.
+ * Track itself is rendered as a separate div in the component, so the
+ * native track is hidden and only the thumbs remain interactive. */
+.range-input {
+  pointer-events: none;
+  -webkit-appearance: none;
+}
+.range-input::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 100%;
+}
+.range-input::-moz-range-track {
+  background: transparent;
+  height: 100%;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #19212C;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  margin-top: 0;
+}
+.range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #19212C;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
 @layer base {
   :root {
     color-scheme: light;
