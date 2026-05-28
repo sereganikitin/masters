@@ -108,6 +108,49 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_construction_period ON construction_entries(year DESC, month DESC);
 `);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Seed default special formats on first boot — so admins see the 3 cards from
+// the original design and can edit them, instead of an empty list.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_SPECIAL_FORMATS = [
+  {
+    tag: "01",
+    title: "Собственные террасы",
+    body:
+      "Ваша личная открытая гостиная под небом Москвы. Место для утреннего кофе, вечерних встреч и созерцания города в любое время года.",
+    image: "/images/about/format-01-terrace.png",
+  },
+  {
+    tag: "02",
+    title: "Ванные с окном",
+    body:
+      "Здесь утро начинается с мягкого естественного света. Продуманная планировка позволяет разместить окно так, чтобы оно освещало комнату, сохраняя при этом полную приватность.",
+    image: "/images/about/format-02-window-bath.png",
+  },
+  {
+    tag: "03",
+    title: "Квартиры с одиннадцатью окнами",
+    body:
+      "Просторная трехкомнатная квартира с одиннадцатью окнами наполнена светом и воздухом. Энергоэффективное остекление и усиленная звукоизоляция сохраняют комфортный микроклимат, тишину и приватность.",
+    image: "/images/about/format-03-eleven-windows.png",
+  },
+];
+
+const formatsCount = db.prepare("SELECT COUNT(*) as n FROM special_formats").get() as {
+  n: number;
+};
+if (formatsCount.n === 0) {
+  const stmt = db.prepare(
+    `INSERT INTO special_formats (tag, title, body, image, details_url, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, ?, '', ?, ?, ?)`,
+  );
+  const now = Date.now();
+  DEFAULT_SPECIAL_FORMATS.forEach((f, i) => {
+    stmt.run(f.tag, f.title, f.body, f.image, i * 10, now, now);
+  });
+}
+
 const rowToOverlay = (r: Record<string, unknown>): Overlay => ({
   id: r.id as number,
   scope: r.scope as Overlay["scope"],
