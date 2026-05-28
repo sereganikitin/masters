@@ -207,17 +207,26 @@ function Hero() {
             </div>
           </Reveal>
 
-          <Reveal mode="up" delay={300}>
-            <div
-              className={`grid gap-4 ${
-                c.ctaTiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
-              }`}
-            >
-              {c.ctaTiles.map((tile, i) => (
-                <CtaTile key={i} tile={tile} />
-              ))}
-            </div>
-          </Reveal>
+          {(() => {
+            // Render only tiles that have a URL — clearing the URL field in
+            // admin is the same as hiding the tile, without forcing the user
+            // to delete-and-recreate it.
+            const visibleTiles = c.ctaTiles.filter((t) => t.url.trim().length > 0);
+            if (visibleTiles.length === 0) return null;
+            return (
+              <Reveal mode="up" delay={300}>
+                <div
+                  className={`grid gap-4 ${
+                    visibleTiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  }`}
+                >
+                  {visibleTiles.map((tile, i) => (
+                    <CtaTile key={i} tile={tile} />
+                  ))}
+                </div>
+              </Reveal>
+            );
+          })()}
         </div>
       </div>
     </section>
