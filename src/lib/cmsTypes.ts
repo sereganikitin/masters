@@ -103,8 +103,12 @@ export const ABOUT_HERO_DEFAULTS: AboutHeroContent = {
   ],
   photo: "/images/hero-genplan.png",
   ctaTiles: [
-    { title: "Видео о проекте", sub: "Узнайте больше", url: "", icon: "play" },
-    { title: "Сайт проекта", sub: "Перейти на сайт", url: "", icon: "arrow" },
+    {
+      title: "Сайт проекта",
+      sub: "Перейти на сайт",
+      url: "https://cg-projects.ru/projects/masters",
+      icon: "arrow",
+    },
   ],
 };
 

@@ -208,12 +208,13 @@ function Hero() {
           </Reveal>
 
           <Reveal mode="up" delay={300}>
-            <div className="grid grid-cols-2 gap-4">
+            <div
+              className={`grid gap-4 ${
+                c.ctaTiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
+              }`}
+            >
               {c.ctaTiles.map((tile, i) => (
-                <CtaTile
-                  key={i}
-                  tile={tile}
-                />
+                <CtaTile key={i} tile={tile} />
               ))}
             </div>
           </Reveal>
