@@ -71,27 +71,6 @@ export function AboutScreen() {
 
 const PAGE_PAD = "px-20"; // 80px gutter on 1920 stage
 
-function Heading({
-  children,
-  className = "",
-  dark = false,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  dark?: boolean;
-}) {
-  // 56px UPPERCASE — Onest semibold mimics RF Dewi Expanded better than Unbounded.
-  return (
-    <Reveal mode="up">
-      <h2
-        className={`font-sans text-[56px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] ${dark ? "text-base-0" : "text-base-800"} ${className}`}
-      >
-        {children}
-      </h2>
-    </Reveal>
-  );
-}
-
 function PrimaryButton({
   children,
   onClick,
