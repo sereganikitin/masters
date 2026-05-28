@@ -196,38 +196,31 @@ function Hero() {
           </Reveal>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <Reveal mode="up" delay={200}>
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-100">
-              <img
-                src={c.photo}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
-          </Reveal>
+        <Reveal mode="up" delay={200}>
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-100">
+            <img
+              src={c.photo}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
 
-          {(() => {
-            // Render only tiles that have a URL — clearing the URL field in
-            // admin is the same as hiding the tile, without forcing the user
-            // to delete-and-recreate it.
-            const visibleTiles = c.ctaTiles.filter((t) => t.url.trim().length > 0);
-            if (visibleTiles.length === 0) return null;
-            return (
-              <Reveal mode="up" delay={300}>
-                <div
-                  className={`grid gap-4 ${
-                    visibleTiles.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                  }`}
-                >
+            {(() => {
+              // Render only tiles that have a URL — clearing the URL field in
+              // admin is the same as hiding the tile.
+              const visibleTiles = c.ctaTiles.filter(
+                (t) => t.url.trim().length > 0,
+              );
+              if (visibleTiles.length === 0) return null;
+              return (
+                <div className="absolute bottom-0 right-0 z-10 flex w-[300px] flex-col">
                   {visibleTiles.map((tile, i) => (
                     <CtaTile key={i} tile={tile} />
                   ))}
                 </div>
-              </Reveal>
-            );
-          })()}
-        </div>
+              );
+            })()}
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -255,29 +248,65 @@ function MetaRow({
 }
 
 function CtaTile({ tile }: { tile: CtaTileType }) {
-  const icon =
-    tile.icon === "play" ? <IconPlay size={20} /> : <IconArrowRight size={20} />;
   const onClick = () => {
     if (!tile.url) return;
     if (tile.url.startsWith("/")) window.location.href = tile.url;
     else window.open(tile.url, "_blank", "noopener,noreferrer");
   };
+
+  const text = (
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="truncate font-sans text-[14px] font-medium tracking-[-0.006em] text-base-800">
+        {tile.title}
+      </p>
+      <p className="truncate font-sans text-[12px] tracking-[-0.004em] text-base-600">
+        {tile.sub}
+      </p>
+    </div>
+  );
+
+  // Figma reference: «play» tile keeps a thumbnail-style light icon block on
+  // the LEFT; «arrow» tile has a dark Imperial Night icon block on the RIGHT
+  // with an external-link glyph, text aligned left.
+  if (tile.icon === "play") {
+    return (
+      <Pressable
+        onClick={onClick}
+        rippleColor="rgba(0,0,0,0.08)"
+        className="flex w-full items-center gap-3 border-b border-base-200 bg-base-0 py-2 pl-2 pr-4 text-left last:border-b-0"
+      >
+        <div className="grid h-14 w-14 flex-shrink-0 place-items-center bg-base-100 text-base-800">
+          <IconPlay size={20} />
+        </div>
+        {text}
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       onClick={onClick}
       rippleColor="rgba(0,0,0,0.08)"
-      className="flex items-center gap-4 bg-base-100 px-5 py-4 text-left"
+      className="flex w-full items-center gap-3 border-b border-base-200 bg-base-0 py-2 pl-4 pr-2 text-left last:border-b-0"
     >
-      <div className="grid h-10 w-10 flex-shrink-0 place-items-center bg-base-0 text-base-800">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="font-sans text-[14px] font-medium tracking-[-0.006em] text-base-800">
-          {tile.title}
-        </p>
-        <p className="font-sans text-[12px] tracking-[-0.004em] text-base-600">
-          {tile.sub}
-        </p>
+      {text}
+      <div className="grid h-14 w-14 flex-shrink-0 place-items-center bg-night-500 text-base-0">
+        {/* External-link icon (square with arrow exiting top-right) */}
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M11 4h5v5" />
+          <path d="M16 4l-7 7" />
+          <path d="M5 7v8a1 1 0 001 1h8" />
+        </svg>
       </div>
     </Pressable>
   );
