@@ -1038,7 +1038,7 @@ function Office() {
             // blends with the Imperial Night palette.
             style={{
               pointerEvents: "none",
-              filter: "grayscale(100%) brightness(0.55) contrast(1.2)",
+              filter: "grayscale(100%) brightness(0.4) contrast(1.35)",
             }}
           />
         ) : (
@@ -1051,12 +1051,24 @@ function Office() {
           )
         )}
 
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]">
-          <div className="grid h-12 w-12 place-items-center bg-base-800 text-base-0 shadow-card">
-            <span className="font-display text-[13px] font-bold leading-none tracking-[0.05em]">
+        {/* Marker — anchored so the tip of the triangle lands on the exact
+            map centre (= the configured coordinates). */}
+        <div className="absolute left-1/2 top-1/2 z-[1] flex -translate-x-1/2 -translate-y-full flex-col items-center">
+          <div className="grid h-16 w-16 place-items-center bg-base-800 text-base-0 shadow-card">
+            <span className="font-display text-[16px] font-bold leading-none tracking-[0.05em]">
               CG
             </span>
           </div>
+          {/* Downward triangle pointer */}
+          <div
+            className="h-0 w-0"
+            style={{
+              borderLeft: "9px solid transparent",
+              borderRight: "9px solid transparent",
+              borderTop: "11px solid #17181C",
+              filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.25))",
+            }}
+          />
         </div>
 
         <Reveal mode="up" delay={120} className="absolute bottom-0 right-0 w-[440px]">
