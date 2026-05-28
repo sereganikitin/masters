@@ -163,11 +163,10 @@ export const ABOUT_OFFICE_DEFAULTS: AboutOfficeContent = {
   phone: "+7 (495) 021-11-11",
   photo: "/images/about/office.png",
   mapImage: "/images/about/office-map.png",
-  // Approximate coords for «Проезд Аэропорта, 8» — район метро Аэропорт.
-  // Точно подстроить можно в админке.
-  mapLat: 55.8013,
-  mapLng: 37.5310,
-  mapZoom: 16,
+  // Exact coords for «Проезд Аэропорта, 8, стр. 2» — confirmed via Yandex Maps.
+  mapLat: 55.797296,
+  mapLng: 37.521792,
+  mapZoom: 17,
   ctaLabel: "Проложить маршрут",
   routeUrl: "https://yandex.ru/maps/?text=Москва Проезд Аэропорта 8",
 };
