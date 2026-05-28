@@ -18,6 +18,9 @@ data/admin.db-shm
 data/admin.db-wal
 *.bak-*
 
+# User-uploaded media (managed via admin UI)
+uploads/
+
 # Logs
 *.log
 

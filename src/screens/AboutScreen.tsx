@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
@@ -14,6 +14,18 @@ import {
   IconPhone,
   IconPlay,
 } from "@/components/Icon";
+import { useContent } from "@/lib/useContent";
+import { specialFormatsApi, type SpecialFormat } from "@/lib/cms";
+import {
+  ABOUT_CONSTRUCTION_DEFAULTS,
+  ABOUT_DOCUMENTS_DEFAULTS,
+  ABOUT_ENGINEERING_DEFAULTS,
+  ABOUT_HERO_DEFAULTS,
+  ABOUT_OFFICE_DEFAULTS,
+  ABOUT_TOUR_DEFAULTS,
+  SITE_HEADER_DEFAULTS,
+  type CtaTile as CtaTileType,
+} from "@/lib/cmsTypes";
 
 // About page modelled on cg-projects.ru/about. Verbatim copy & section flow
 // per Figma frame 14057:31658. All section titles are huge UPPERCASE.
@@ -105,29 +117,43 @@ function PrimaryButton({
 
 function PageHeader() {
   const nav = useNavigate();
+  const header = useContent("site.header", SITE_HEADER_DEFAULTS);
+  const navigate = (href: string) => {
+    if (!href || href === "#") return;
+    if (href.startsWith("/")) nav(href);
+    else window.open(href, "_blank", "noopener,noreferrer");
+  };
   return (
     <header
       className={`flex items-center justify-between border-b border-base-200 bg-base-0 ${PAGE_PAD} py-6`}
     >
       <button onClick={() => nav("/")} className="flex items-center gap-3">
         <div className="grid h-9 w-9 place-items-center bg-base-800 text-base-0">
-          <span className="font-display text-[14px] font-bold leading-none">CG</span>
+          <span className="font-display text-[14px] font-bold leading-none">
+            {header.brandLine}
+          </span>
         </div>
         <span className="font-display text-[14px] font-medium uppercase tracking-[0.25em] text-base-800">
-          Capital Group
+          {header.brand}
         </span>
       </button>
 
       <nav className="flex items-center gap-12 font-sans text-body font-medium text-base-800">
-        <button onClick={() => nav("/catalog")} className="transition-opacity hover:opacity-60">
-          Выбрать квартиру
-        </button>
-        <button className="transition-opacity hover:opacity-60">О компании</button>
-        <button className="transition-opacity hover:opacity-60">Контакты</button>
+        {header.menuItems.map((mi) => (
+          <button
+            key={mi.label}
+            onClick={() => navigate(mi.href)}
+            className="transition-opacity hover:opacity-60"
+          >
+            {mi.label}
+          </button>
+        ))}
       </nav>
 
       <div className="flex items-center gap-8 font-sans text-body font-medium text-base-800">
-        <span className="tracking-wide">+7 (495) 021-11-11</span>
+        <a href={header.phoneHref || "#"} className="tracking-wide">
+          {header.phone}
+        </a>
         <button className="flex items-center gap-2 transition-opacity hover:opacity-60">
           <IconPhone size={18} />
           Войти
@@ -142,28 +168,30 @@ function PageHeader() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Hero() {
+  const c = useContent("about.hero", ABOUT_HERO_DEFAULTS);
+  const titleLines = c.title.split("\n");
   return (
     <section id="hero" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-2 gap-16">
         <div>
           <Reveal mode="up">
             <h1 className="font-sans text-[64px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
-              Премиальный
-              <br />
-              дом МАСТЕРС
+              {titleLines.map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < titleLines.length - 1 && <br />}
+                </span>
+              ))}
             </h1>
           </Reveal>
 
           <Reveal mode="up" delay={120}>
             <dl className="mt-16 divide-y divide-base-200 border-t border-base-200">
-              <MetaRow label="Класс жилья">Премиум</MetaRow>
-              <MetaRow label="Срок сдачи" dim>IV кв. 2029 г.</MetaRow>
-              <MetaRow label="Адрес">г. Москва, ул. Викторенко, 16</MetaRow>
-              <MetaRow label="О проекте">
-                МАСТЕРС у метро Аэропорт — ансамбль разновысотных секций от 8 до 25 этажей.
-                Приватный двор и линейный парк с амфитеатром. Клубная гостиная с камином
-                и коворкинг только для резидентов.
-              </MetaRow>
+              {c.metaRows.map((row, i) => (
+                <MetaRow key={i} label={row.label} dim={row.dim}>
+                  {row.value}
+                </MetaRow>
+              ))}
             </dl>
           </Reveal>
         </div>
@@ -172,7 +200,7 @@ function Hero() {
           <Reveal mode="up" delay={200}>
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-100">
               <img
-                src="/images/hero-genplan.png"
+                src={c.photo}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -181,12 +209,12 @@ function Hero() {
 
           <Reveal mode="up" delay={300}>
             <div className="grid grid-cols-2 gap-4">
-              <CtaTile icon={<IconPlay size={20} />} title="Видео о проекте" sub="Узнайте больше" />
-              <CtaTile
-                icon={<IconArrowRight size={20} />}
-                title="Сайт проекта"
-                sub="Перейти на сайт"
-              />
+              {c.ctaTiles.map((tile, i) => (
+                <CtaTile
+                  key={i}
+                  tile={tile}
+                />
+              ))}
             </div>
           </Reveal>
         </div>
@@ -216,17 +244,17 @@ function MetaRow({
   );
 }
 
-function CtaTile({
-  icon,
-  title,
-  sub,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  sub: string;
-}) {
+function CtaTile({ tile }: { tile: CtaTileType }) {
+  const icon =
+    tile.icon === "play" ? <IconPlay size={20} /> : <IconArrowRight size={20} />;
+  const onClick = () => {
+    if (!tile.url) return;
+    if (tile.url.startsWith("/")) window.location.href = tile.url;
+    else window.open(tile.url, "_blank", "noopener,noreferrer");
+  };
   return (
     <Pressable
+      onClick={onClick}
       rippleColor="rgba(0,0,0,0.08)"
       className="flex items-center gap-4 bg-base-100 px-5 py-4 text-left"
     >
@@ -235,9 +263,9 @@ function CtaTile({
       </div>
       <div className="min-w-0">
         <p className="font-display text-[14px] font-semibold uppercase tracking-[0.1em] text-base-800">
-          {title}
+          {tile.title}
         </p>
-        <p className="font-sans text-small text-base-600">{sub}</p>
+        <p className="font-sans text-small text-base-600">{tile.sub}</p>
       </div>
     </Pressable>
   );
@@ -299,13 +327,19 @@ function Genplan() {
 
 function Tour3d() {
   const nav = useNavigate();
+  const c = useContent("about.tour", ABOUT_TOUR_DEFAULTS);
+  const handleCta = () => {
+    if (!c.ctaUrl) return;
+    if (c.ctaUrl.startsWith("/")) nav(c.ctaUrl);
+    else window.open(c.ctaUrl, "_blank", "noopener,noreferrer");
+  };
   return (
     <section id="tour" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[280px_1fr_280px] items-start gap-12">
         <Reveal mode="up">
           <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
             <span className="inline-block h-2.5 w-2.5 bg-base-800" />
-            Виртуальный тур
+            {c.eyebrow}
           </p>
         </Reveal>
 
@@ -313,31 +347,28 @@ function Tour3d() {
           <div className="mx-auto max-w-[640px]">
             <div className="font-sans text-body leading-relaxed text-base-800">
               <div className="float-left mr-5 mt-1 h-[110px] w-[110px] overflow-hidden bg-base-100">
-                <img
-                  src="/images/about/tour-thumb.png"
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
+                {c.thumbImage && (
+                  <img
+                    src={c.thumbImage}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                )}
               </div>
-              <p>
-                Взгляните на район дома «Мастерс» с нового ракурса в нашем интерактивном
-                3D-туре. Переключайтесь между дневным и вечерним временем, чтобы оценить
-                панорамные виды Петровского парка, стадиона «ВЭБ Арена» и делового центра
-                Москва-Сити.
-              </p>
-              <p className="mt-6">
-                Это уникальный шанс изучить среду, масштаб и перспективы будущего дома,
-                прежде чем сделать решающий выбор.
-              </p>
+              {c.paragraphs.map((p, i) => (
+                <p key={i} className={i > 0 ? "mt-6" : undefined}>
+                  {p}
+                </p>
+              ))}
             </div>
 
             <div className="mt-12 flex justify-center">
               <Pressable
-                onClick={() => nav("/tour")}
+                onClick={handleCta}
                 rippleColor="rgba(255,255,255,0.18)"
                 className="flex h-14 items-center gap-5 bg-night-500 px-7 font-sans text-body font-medium text-base-0"
               >
-                Смотреть 3D тур
+                {c.ctaLabel}
                 <span className="h-px w-5 bg-base-0/40" />
                 <IconArrowRight size={18} />
               </Pressable>
@@ -355,30 +386,58 @@ function Tour3d() {
 // 5. Особые форматы — 3 карточки с фото
 // ─────────────────────────────────────────────────────────────────────────────
 
+const FORMATS_FALLBACK: { tag: string; title: string; body: string; image: string; detailsUrl?: string }[] = [
+  {
+    tag: "01",
+    title: "Собственные террасы",
+    body:
+      "Ваша личная открытая гостиная под небом Москвы. Место для утреннего кофе, вечерних встреч и созерцания города в любое время года.",
+    image: "/images/about/format-01-terrace.png",
+  },
+  {
+    tag: "02",
+    title: "Ванные с окном",
+    body:
+      "Здесь утро начинается с мягкого естественного света. Продуманная планировка позволяет разместить окно так, чтобы оно освещало комнату, сохраняя при этом полную приватность.",
+    image: "/images/about/format-02-window-bath.png",
+  },
+  {
+    tag: "03",
+    title: "Квартиры с одиннадцатью окнами",
+    body:
+      "Просторная трехкомнатная квартира с одиннадцатью окнами наполнена светом и воздухом. Энергоэффективное остекление и усиленная звукоизоляция сохраняют комфортный микроклимат, тишину и приватность.",
+    image: "/images/about/format-03-eleven-windows.png",
+  },
+];
+
+const FORMATS_VISIBLE = 3;
+
 function SpecialFormats() {
-  const items = [
-    {
-      tag: "01",
-      title: "Собственные террасы",
-      body:
-        "Ваша личная открытая гостиная под небом Москвы. Место для утреннего кофе, вечерних встреч и созерцания города в любое время года.",
-      image: "/images/about/format-01-terrace.png",
-    },
-    {
-      tag: "02",
-      title: "Ванные с окном",
-      body:
-        "Здесь утро начинается с мягкого естественного света. Продуманная планировка позволяет разместить окно так, чтобы оно освещало комнату, сохраняя при этом полную приватность.",
-      image: "/images/about/format-02-window-bath.png",
-    },
-    {
-      tag: "03",
-      title: "Квартиры с одиннадцатью окнами",
-      body:
-        "Просторная трехкомнатная квартира с одиннадцатью окнами наполнена светом и воздухом. Энергоэффективное остекление и усиленная звукоизоляция сохраняют комфортный микроклимат, тишину и приватность.",
-      image: "/images/about/format-03-eleven-windows.png",
-    },
-  ];
+  const [items, setItems] = useState<SpecialFormat[] | null>(null);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    specialFormatsApi
+      .list()
+      .then(setItems)
+      .catch(() => setItems([]));
+  }, []);
+
+  // Use CMS items if any, otherwise fall back to hardcoded defaults so the
+  // page is never empty during first-run with no admin content.
+  const resolved =
+    items && items.length > 0
+      ? items.map((it) => ({
+          tag: it.tag,
+          title: it.title,
+          body: it.body,
+          image: it.image,
+          detailsUrl: it.detailsUrl,
+        }))
+      : FORMATS_FALLBACK;
+
+  const display = showAll ? resolved : resolved.slice(0, FORMATS_VISIBLE);
+  const hiddenCount = Math.max(0, resolved.length - FORMATS_VISIBLE);
   return (
     <section id="special-formats" className={`${PAGE_PAD} pb-24 pt-24`}>
       <Reveal mode="up">
@@ -388,8 +447,8 @@ function SpecialFormats() {
       </Reveal>
 
       <div>
-        {items.map((it, i) => (
-          <Reveal key={it.tag} mode="up" delay={i * 100}>
+        {display.map((it, i) => (
+          <Reveal key={`${it.tag}-${i}`} mode="up" delay={i * 100}>
             <article className="grid grid-cols-[180px_1fr_560px] items-stretch gap-12 border-b border-base-200 py-12">
               {/* Left — marker + number */}
               <div className="flex items-start gap-3 pt-1 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
@@ -406,47 +465,64 @@ function SpecialFormats() {
                   <p className="font-sans text-body leading-relaxed text-base-700">
                     {it.body}
                   </p>
-                  <button className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60">
-                    <span className="border-b border-base-800 pb-0.5">Подробнее</span>
-                    <IconArrowRight size={16} />
-                  </button>
+                  {it.detailsUrl ? (
+                    <a
+                      href={it.detailsUrl}
+                      target={it.detailsUrl.startsWith("/") ? undefined : "_blank"}
+                      rel="noopener noreferrer"
+                      className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60"
+                    >
+                      <span className="border-b border-base-800 pb-0.5">Подробнее</span>
+                      <IconArrowRight size={16} />
+                    </a>
+                  ) : (
+                    <button className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60">
+                      <span className="border-b border-base-800 pb-0.5">Подробнее</span>
+                      <IconArrowRight size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Right — photo */}
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-base-100">
-                <img
-                  src={it.image}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 hover:scale-[1.04]"
-                />
+                {it.image && (
+                  <img
+                    src={it.image}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 hover:scale-[1.04]"
+                  />
+                )}
               </div>
             </article>
           </Reveal>
         ))}
       </div>
 
-      <Reveal mode="up" delay={200}>
-        <div className="mt-12 flex justify-center gap-1">
-          <Pressable
-            rippleColor="rgba(255,255,255,0.18)"
-            className="flex h-12 items-center bg-night-500 px-6 font-sans text-body font-medium text-base-0"
-          >
-            Показать ещё 3
-          </Pressable>
-          <Pressable
-            rippleColor="rgba(255,255,255,0.18)"
-            className="grid h-12 w-12 place-items-center bg-night-500 text-base-0"
-            aria-label="Ещё"
-          >
-            <span className="flex gap-1">
-              <span className="h-1 w-1 rounded-full bg-base-0" />
-              <span className="h-1 w-1 rounded-full bg-base-0" />
-              <span className="h-1 w-1 rounded-full bg-base-0" />
-            </span>
-          </Pressable>
-        </div>
-      </Reveal>
+      {hiddenCount > 0 && !showAll && (
+        <Reveal mode="up" delay={200}>
+          <div className="mt-12 flex justify-center gap-1">
+            <Pressable
+              onClick={() => setShowAll(true)}
+              rippleColor="rgba(255,255,255,0.18)"
+              className="flex h-12 items-center bg-night-500 px-6 font-sans text-body font-medium text-base-0"
+            >
+              Показать ещё {hiddenCount}
+            </Pressable>
+            <Pressable
+              rippleColor="rgba(255,255,255,0.18)"
+              className="grid h-12 w-12 place-items-center bg-night-500 text-base-0"
+              aria-label="Ещё"
+            >
+              <span className="flex gap-1">
+                <span className="h-1 w-1 rounded-full bg-base-0" />
+                <span className="h-1 w-1 rounded-full bg-base-0" />
+                <span className="h-1 w-1 rounded-full bg-base-0" />
+              </span>
+            </Pressable>
+          </div>
+        </Reveal>
+      )}
     </section>
   );
 }
@@ -729,63 +805,69 @@ function pluralize(n: number, forms: [string, string, string]): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Engineering() {
+  const c = useContent("about.engineering", ABOUT_ENGINEERING_DEFAULTS);
+  const headingLines = c.heading.split("\n");
+  const handleCta = () => {
+    if (!c.ctaUrl) return;
+    if (c.ctaUrl.startsWith("tel:") || c.ctaUrl.startsWith("mailto:")) {
+      window.location.href = c.ctaUrl;
+    } else if (c.ctaUrl.startsWith("/")) {
+      window.location.href = c.ctaUrl;
+    } else {
+      window.open(c.ctaUrl, "_blank", "noopener,noreferrer");
+    }
+  };
   return (
     <section id="engineering" className="relative w-full bg-night-500 text-base-0">
       <div className={`grid grid-cols-[1.4fr_1fr] gap-16 ${PAGE_PAD} py-24`}>
-        {/* Left — huge heading at top, body text anchored to bottom */}
         <div className="flex min-h-[680px] flex-col">
           <Reveal mode="up">
             <h2 className="font-sans text-[120px] font-semibold uppercase leading-[0.9] tracking-[-0.02em] text-base-0">
-              Инженерные
-              <br />
-              системы
+              {headingLines.map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < headingLines.length - 1 && <br />}
+                </span>
+              ))}
             </h2>
           </Reveal>
 
           <Reveal mode="up" delay={200}>
             <div className="mt-auto max-w-[620px] space-y-5 pt-16 font-sans text-small leading-relaxed text-base-0/85">
-              <p>
-                В квартирах предусмотрены естественная вентиляция через открывающиеся
-                створки и приточные клапаны, а также центральная система кондиционирования
-                — остаётся установить только внутренний блок. Вода проходит многоступенчатую
-                очистку (механическая фильтрация, умягчение и тонкая очистка).
-              </p>
-              <p>
-                Предусмотрены повышенные электрические мощности, а для квартир
-                с террасами — дополнительные. В лобби и общественных зонах
-                поддерживается комфортный микроклимат, горячая вода подаётся сразу
-                благодаря рециркуляции. Для удобства жителей доступен Wi-Fi в лобби
-                и на придомовой территории, а связь усилена в паркинге и лифтах.
-              </p>
+              {c.paragraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
             </div>
           </Reveal>
         </div>
 
-        {/* Right — eyebrow at top, photo, full-width CTA at bottom */}
         <div className="flex flex-col">
           <Reveal mode="up" delay={120}>
             <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-0">
               <span className="inline-block h-2.5 w-2.5 bg-base-0" />
-              Мастерство в деталях
+              {c.eyebrow}
             </p>
           </Reveal>
 
           <Reveal mode="up" delay={200}>
             <div className="relative mt-12 aspect-[3/4] w-full overflow-hidden bg-base-0/[0.04]">
-              <img
-                src="/images/about/engineering.png"
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              {c.photo && (
+                <img
+                  src={c.photo}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
             </div>
           </Reveal>
 
           <Reveal mode="up" delay={300}>
             <Pressable
+              onClick={handleCta}
               rippleColor="rgba(255,255,255,0.18)"
               className="flex h-14 w-full items-center justify-between bg-base-0/[0.07] px-6 font-sans text-body font-medium text-base-0 transition-colors hover:bg-base-0/[0.12]"
             >
-              Заказать звонок
+              {c.ctaLabel}
               <IconArrowRight size={18} />
             </Pressable>
           </Reveal>
@@ -800,22 +882,25 @@ function Engineering() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Construction() {
-  const bullets = [
-    "Монолитные работы: заливка колонн и плит перекрытий с 8-го по 12-й этажи.",
-    "Фасадные работы: подготовка к монтажу алюминиевых панелей и элементов остекления.",
-    "Начало работ по формированию ландшафта.",
-  ];
+  const nav = useNavigate();
+  const c = useContent("about.construction", ABOUT_CONSTRUCTION_DEFAULTS);
+  const handleGallery = () => {
+    if (c.galleryUrl) {
+      if (c.galleryUrl.startsWith("/")) nav(c.galleryUrl);
+      else window.open(c.galleryUrl, "_blank", "noopener,noreferrer");
+    } else {
+      nav("/about/construction-gallery");
+    }
+  };
   return (
     <section id="construction" className="relative w-full bg-base-0">
       <div className="grid grid-cols-[1fr_2fr_1.6fr]">
-        {/* Left — small status label, vertically centered */}
-        <div className={`flex items-center pl-20`}>
+        <div className="flex items-center pl-20">
           <Reveal mode="up">
             <p className="font-sans text-body text-base-600">Общий статус</p>
           </Reveal>
         </div>
 
-        {/* Middle — heading + selects + divider + text + bullets + CTA */}
         <div className="flex flex-col py-24 pr-12">
           <Reveal mode="up">
             <h2 className="font-sans text-[48px] font-semibold uppercase leading-[0.95] tracking-[-0.01em] text-base-800">
@@ -827,8 +912,8 @@ function Construction() {
 
           <Reveal mode="up" delay={150}>
             <div className="mt-8 flex gap-4">
-              <SelectChip label="Корпус 2" />
-              <SelectChip label="Август 2025" />
+              <SelectChip label={c.building} />
+              <SelectChip label={c.period} />
             </div>
           </Reveal>
 
@@ -838,13 +923,12 @@ function Construction() {
 
           <Reveal mode="up" delay={260}>
             <p className="mt-8 max-w-[480px] font-sans text-body leading-relaxed text-base-800">
-              В августе работы были сконцентрированы на возведении вертикальных
-              конструкций и подготовке к монтажу уникальных фасадных решений.
+              {c.intro}
             </p>
 
             <ul className="mt-6 max-w-[480px] space-y-3 font-sans text-body leading-relaxed text-base-700">
-              {bullets.map((b) => (
-                <li key={b} className="flex gap-3">
+              {c.bullets.map((b, i) => (
+                <li key={i} className="flex gap-3">
                   <span className="mt-[9px] inline-block h-[5px] w-[5px] flex-shrink-0 rounded-full bg-base-800" />
                   <span>{b}</span>
                 </li>
@@ -854,23 +938,25 @@ function Construction() {
 
           <Reveal mode="up" delay={360}>
             <Pressable
+              onClick={handleGallery}
               rippleColor="rgba(255,255,255,0.2)"
               className="mt-12 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
             >
-              Смотреть галерею
+              {c.galleryLabel}
               <IconArrowRight size={18} />
             </Pressable>
           </Reveal>
         </div>
 
-        {/* Right — full-height construction photo */}
         <Reveal mode="right" delay={120}>
           <div className="relative h-full min-h-[680px] w-full overflow-hidden bg-base-100">
-            <img
-              src="/images/about/construction.png"
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            {c.photo && (
+              <img
+                src={c.photo}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
           </div>
         </Reveal>
       </div>
@@ -898,24 +984,26 @@ function SelectChip({ label }: { label: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Office() {
-  // Full-width dark map of the district with a CG marker in the centre and
-  // a self-contained office tile pinned to the bottom-right corner — matches
-  // cg-projects.ru/about layout.
+  const c = useContent("about.office", ABOUT_OFFICE_DEFAULTS);
+  const titleLines = c.title.split("\n");
+  const handleRoute = () => {
+    if (!c.routeUrl) return;
+    window.open(c.routeUrl, "_blank", "noopener,noreferrer");
+  };
   return (
     <section id="office" className="relative w-full bg-base-100">
-      {/* Match the original image aspect ratio (1692×991) so the map is shown
-        * in full — no top/bottom crop. */}
       <div
         className="relative w-full overflow-hidden bg-night-500"
         style={{ aspectRatio: "1692 / 991" }}
       >
-        <img
-          src="/images/about/office-map.png"
-          alt="Карта района офиса продаж"
-          className="absolute inset-0 h-full w-full object-contain opacity-95"
-        />
+        {c.mapImage && (
+          <img
+            src={c.mapImage}
+            alt="Карта района офиса продаж"
+            className="absolute inset-0 h-full w-full object-contain opacity-95"
+          />
+        )}
 
-        {/* CG marker — centred over the map */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="grid h-12 w-12 place-items-center bg-base-800 text-base-0 shadow-card">
             <span className="font-display text-[13px] font-bold leading-none tracking-[0.05em]">
@@ -924,34 +1012,37 @@ function Office() {
           </div>
         </div>
 
-        {/* Office tile — flush to bottom-right corner */}
         <Reveal mode="up" delay={120} className="absolute bottom-0 right-0 w-[440px]">
           <div className="flex flex-col bg-night-500 text-base-0 shadow-card">
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-base-100">
-              <img
-                src="/images/about/office.png"
-                alt="Фото офиса продаж"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              {c.photo && (
+                <img
+                  src={c.photo}
+                  alt="Фото офиса продаж"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
             </div>
 
             <div className="flex flex-col px-8 pb-8 pt-7">
               <h3 className="font-sans text-[22px] font-semibold uppercase leading-tight tracking-[0.02em]">
-                Офис продаж
-                <br />
-                «Мастерс»
+                {titleLines.map((l, i) => (
+                  <span key={i}>
+                    {l}
+                    {i < titleLines.length - 1 && <br />}
+                  </span>
+                ))}
               </h3>
-              <p className="mt-7 font-sans text-small text-base-0/65">
-                г. Москва, Проезд Аэропорта, 8
-              </p>
-              <p className="font-sans text-small text-base-0/65">+7 (495) 021-11-11</p>
+              <p className="mt-7 font-sans text-small text-base-0/65">{c.address}</p>
+              <p className="font-sans text-small text-base-0/65">{c.phone}</p>
             </div>
 
             <Pressable
+              onClick={handleRoute}
               rippleColor="rgba(255,255,255,0.18)"
               className="flex h-14 w-full items-center justify-between bg-base-0/[0.07] px-8 font-sans text-body font-medium text-base-0 transition-colors hover:bg-base-0/[0.12]"
             >
-              Проложить маршрут
+              {c.ctaLabel}
               <IconArrowRight size={18} />
             </Pressable>
           </div>
@@ -966,65 +1057,62 @@ function Office() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Documents() {
-  // ДОМ.РФ project page — IDN domain; user provided pre-encoded form so we keep it verbatim.
-  const domrfUrl =
-    "https://%D0%BD%D0%B0%D1%88.%D0%B4%D0%BE%D0%BC.%D1%80%D1%84/%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D1%8B/%D0%BA%D0%B0%D1%82%D0%B0%D0%BB%D0%BE%D0%B3-%D0%BD%D0%BE%D0%B2%D0%BE%D1%81%D1%82%D1%80%D0%BE%D0%B5%D0%BA/%D0%BE%D0%B1%D1%8A%D0%B5%D0%BA%D1%82/70548";
+  const c = useContent("about.documents", ABOUT_DOCUMENTS_DEFAULTS);
   return (
     <section id="documents" className={`${PAGE_PAD} py-24`}>
       <div className="grid grid-cols-[280px_1fr_280px] items-start gap-12">
         <Reveal mode="up">
           <p className="flex items-center gap-3 font-sans text-upper uppercase tracking-[0.3em] text-base-800">
             <span className="inline-block h-2.5 w-2.5 bg-base-800" />
-            Документы
+            {c.eyebrow}
           </p>
         </Reveal>
 
         <Reveal mode="up" delay={120}>
           <div className="mx-auto max-w-[640px]">
             <div className="font-sans text-body leading-relaxed text-base-800">
-              <div className="float-left mr-5 mt-1 grid h-[90px] w-[90px] place-items-center bg-base-100">
-                {/* DOM.RF stylised wordmark — temple/columns motif */}
-                <svg
-                  viewBox="0 0 56 56"
-                  className="h-12 w-12 text-base-800"
-                  fill="currentColor"
-                  aria-hidden
-                >
-                  <rect x="6" y="14" width="44" height="2" />
-                  <rect x="9" y="18" width="3" height="18" />
-                  <rect x="16" y="18" width="3" height="18" />
-                  <rect x="23" y="18" width="3" height="18" />
-                  <rect x="30" y="18" width="3" height="18" />
-                  <rect x="37" y="18" width="3" height="18" />
-                  <rect x="44" y="18" width="3" height="18" />
-                  <rect x="6" y="38" width="44" height="2" />
-                  <text
-                    x="28"
-                    y="50"
-                    textAnchor="middle"
-                    fontSize="8"
-                    fontWeight="700"
-                    fontFamily="inherit"
+              <div className="float-left mr-5 mt-1 grid h-[90px] w-[90px] place-items-center overflow-hidden bg-base-100">
+                {c.logo ? (
+                  <img src={c.logo} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <svg
+                    viewBox="0 0 56 56"
+                    className="h-12 w-12 text-base-800"
+                    fill="currentColor"
+                    aria-hidden
                   >
-                    ДОМ.РФ
-                  </text>
-                </svg>
+                    <rect x="6" y="14" width="44" height="2" />
+                    <rect x="9" y="18" width="3" height="18" />
+                    <rect x="16" y="18" width="3" height="18" />
+                    <rect x="23" y="18" width="3" height="18" />
+                    <rect x="30" y="18" width="3" height="18" />
+                    <rect x="37" y="18" width="3" height="18" />
+                    <rect x="44" y="18" width="3" height="18" />
+                    <rect x="6" y="38" width="44" height="2" />
+                    <text
+                      x="28"
+                      y="50"
+                      textAnchor="middle"
+                      fontSize="8"
+                      fontWeight="700"
+                      fontFamily="inherit"
+                    >
+                      ДОМ.РФ
+                    </text>
+                  </svg>
+                )}
               </div>
-              <p>
-                Вся проектная документация доступна на официальном портале ДОМ.РФ.
-                Здесь вы найдёте актуальные планы, разрешения, проектные декларации
-                и другие официальные материалы для детального изучения.
-              </p>
+              <p>{c.body}</p>
             </div>
 
             <div className="mt-12 flex justify-center">
               <a
-                href={domrfUrl}
+                href={c.docsUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-14 items-center gap-5 bg-night-500 px-7 font-sans text-body font-medium text-base-0 transition-colors hover:bg-night-400"
               >
-                Изучить документы
+                {c.ctaLabel}
                 <span className="h-px w-5 bg-base-0/40" />
                 <IconArrowRight size={18} />
               </a>

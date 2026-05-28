@@ -7,6 +7,7 @@ import { GenplanScreen } from "@/screens/GenplanScreen";
 import { ApartmentScreen } from "@/screens/ApartmentScreen";
 import { TourScreen } from "@/screens/TourScreen";
 import { AdminScreen } from "@/screens/AdminScreen";
+import { ConstructionGalleryScreen } from "@/screens/ConstructionGalleryScreen";
 
 function RedirectSectionToCatalog() {
   const params = useParams<{ sectionNumber?: string }>();
@@ -37,6 +38,7 @@ export function App() {
         {/* Responsive web pages — render outside Stage. */}
         <Route path="/admin/*" element={<AdminScreen />} />
         <Route path="/about" element={<AboutScreen />} />
+        <Route path="/about/construction-gallery" element={<ConstructionGalleryScreen />} />
         <Route path="/catalog" element={<CatalogScreen />} />
 
         {/* Kiosk screens — wrapped in the 1920×1080 Stage. */}
