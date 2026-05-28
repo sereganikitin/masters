@@ -290,16 +290,20 @@ function CtaTile({ tile }: { tile: CtaTileType }) {
 function Genplan() {
   const nav = useNavigate();
   return (
-    <section id="genplan" className="relative w-full bg-night-500 text-base-0">
+    <section id="genplan" className="relative w-full bg-base-0 text-base-800">
       <div className={`${PAGE_PAD} pb-16 pt-24`}>
-        <Heading dark>Генплан проекта</Heading>
+        <Reveal mode="up">
+          <h2 className="border-t border-base-800 pt-6 font-display text-[64px] font-semibold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
+            Генплан проекта
+          </h2>
+        </Reveal>
       </div>
 
       {/* Same aerial + section chips as the interactive /genplan, but here
         * sections are NOT clickable and admin overlays are NOT shown.
         * Surrounding POI labels (Викторенко, Авиапарк, школа, парк…) are added. */}
       <div
-        className="relative w-full overflow-hidden"
+        className="relative w-full overflow-hidden bg-night-500"
         style={{ aspectRatio: "1920 / 1080" }}
       >
         <GenplanCanvas
