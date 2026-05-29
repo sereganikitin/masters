@@ -1,0 +1,53 @@
+name: Refresh feed (scheduled)
+
+# Pulls the latest Capital Group XML feed, rebuilds the JSON snapshot,
+# rebuilds the Vite bundle (content-hashed so clients pick up the new data
+# automatically), and restarts the API. Independent of code pushes — those
+# go through deploy.yml.
+
+on:
+  schedule:
+    # 06:00, 12:00, 18:00 UTC → 09:00, 15:00, 21:00 MSK.
+    - cron: "0 6,12,18 * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Manual trigger reason (optional, for the run log)
+        required: false
+        default: ""
+
+concurrency:
+  # Shares the same group as deploy.yml so a scheduled refresh and a code
+  # push can't clobber each other on the server.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/masters' }}
+
+            echo "==> Trigger reason: ${{ github.event.inputs.reason || 'scheduled' }}"
+
+            echo "==> Drop the cached feed so the next build pulls fresh XML"
+            rm -f data/feed.xml
+
+            echo "==> Build (FORCE_REFETCH=1 → data:build re-fetches the feed)"
+            FORCE_REFETCH=1 npm run build
+
+            echo "==> Reload backend service"
+            sudo systemctl restart masters-api
+            sudo systemctl reload nginx || true
+
+            echo "==> Done — feed refreshed at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
