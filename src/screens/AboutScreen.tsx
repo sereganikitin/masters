@@ -11,7 +11,6 @@ import type { Apartment, RoomType } from "@/data/types";
 import {
   IconClose,
   IconArrowRight,
-  IconPhone,
   IconPlay,
 } from "@/components/Icon";
 import { useContent } from "@/lib/useContent";
@@ -133,10 +132,6 @@ function PageHeader() {
         <a href={header.phoneHref || "#"} className="tracking-wide">
           {header.phone}
         </a>
-        <button className="flex items-center gap-2 transition-opacity hover:opacity-60">
-          <IconPhone size={18} />
-          Войти
-        </button>
       </div>
     </header>
   );

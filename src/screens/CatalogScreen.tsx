@@ -34,6 +34,8 @@ interface Filters {
   maxArea: number;
   minFloor: number;
   maxFloor: number;
+  excludeFirstFloor: boolean;
+  excludeLastFloor: boolean;
   /** Selected decoration chip keys (multi-select). */
   decoration: Set<string>;
   /** Stand-in for «Со скидкой»; no data backing yet, kept as a no-op chip. */
@@ -54,10 +56,21 @@ function getDefaultFilters(all: Apartment[]): Filters {
     maxArea: Math.max(...areas),
     minFloor: Math.min(...floors),
     maxFloor: Math.max(...floors),
+    excludeFirstFloor: false,
+    excludeLastFloor: false,
     decoration: new Set(),
     discount: false,
     perks: new Set(),
   };
+}
+
+/** Per-section top floor — used by the «Не последний» filter. */
+function sectionTopFloors(): Record<number, number> {
+  const map: Record<number, number> = {};
+  getHouse().sections.forEach((s) => {
+    map[s.number] = s.highFloor ?? 0;
+  });
+  return map;
 }
 
 // Decoration chip catalogue. Each chip matches one or more strings in the live
@@ -131,6 +144,8 @@ export function CatalogScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const topFloors = useMemo(() => sectionTopFloors(), []);
+
   const filtered = useMemo(() => {
     const list = allApartments.filter((a) => {
       if (filters.room.size > 0 && !filters.room.has(a.roomType)) return false;
@@ -139,6 +154,9 @@ export function CatalogScreen() {
       if (a.price < filters.minPrice || a.price > filters.maxPrice) return false;
       if (a.area < filters.minArea || a.area > filters.maxArea) return false;
       if (a.floor < filters.minFloor || a.floor > filters.maxFloor) return false;
+      if (filters.excludeFirstFloor && a.floor === 1) return false;
+      if (filters.excludeLastFloor && a.floor === topFloors[a.sectionNumber])
+        return false;
       if (filters.decoration.size > 0) {
         const matches = DECORATION_CHIPS.filter((c) =>
           filters.decoration.has(c.key),
@@ -164,17 +182,34 @@ export function CatalogScreen() {
       "floor-desc": (a, b) => b.floor - a.floor,
     };
     return [...list].sort(cmp[sort]);
-  }, [allApartments, filters, sort]);
+  }, [allApartments, filters, sort, topFloors]);
 
   const reset = () => setFilters(bounds);
 
   const activeChips = buildActiveChips(filters, bounds, setFilters);
   const anyFilterActive = activeChips.length > 0;
 
-  const roomSummary =
-    filters.room.size === 0
-      ? "Любые"
-      : Array.from(filters.room).map(roomTypeLabel).join(", ");
+  const paramSummary = (() => {
+    const parts: string[] = [];
+    if (filters.room.size > 0) {
+      parts.push(Array.from(filters.room).map(roomTypeLabel).join(", "));
+    }
+    if (
+      filters.minArea > bounds.minArea ||
+      filters.maxArea < bounds.maxArea
+    ) {
+      parts.push(`${formatArea(filters.minArea)}–${formatArea(filters.maxArea)}`);
+    }
+    if (
+      filters.minFloor > bounds.minFloor ||
+      filters.maxFloor < bounds.maxFloor
+    ) {
+      parts.push(`этаж ${filters.minFloor}–${filters.maxFloor}`);
+    }
+    if (filters.excludeFirstFloor) parts.push("не первый");
+    if (filters.excludeLastFloor) parts.push("не последний");
+    return parts.length === 0 ? "Все" : parts.join(" · ");
+  })();
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
@@ -202,17 +237,12 @@ export function CatalogScreen() {
 
           {/* Top row — 3 columns (Параметры / Стоимость / Срок сдачи) */}
           <div className="mt-10 grid grid-cols-3 gap-5">
-            <RoomDropdown
+            <ParamsDropdown
               label="Параметры квартиры"
-              value={roomSummary}
-              selected={filters.room}
-              onToggle={(rt) =>
-                setFilters((f) => {
-                  const next = new Set(f.room);
-                  next.has(rt) ? next.delete(rt) : next.add(rt);
-                  return { ...f, room: next };
-                })
-              }
+              value={paramSummary}
+              filters={filters}
+              bounds={bounds}
+              setFilters={setFilters}
             />
 
             <PriceSliderCard
@@ -347,7 +377,6 @@ export function CatalogScreen() {
       {drawerOpen && (
         <AllFiltersDrawer
           filters={filters}
-          bounds={bounds}
           sections={house.sections.map((s) => s.number)}
           setFilters={setFilters}
           onClose={() => setDrawerOpen(false)}
@@ -363,13 +392,11 @@ export function CatalogScreen() {
 
 function AllFiltersDrawer({
   filters,
-  bounds,
   sections,
   setFilters,
   onClose,
 }: {
   filters: Filters;
-  bounds: Filters;
   sections: number[];
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   onClose: () => void;
@@ -422,32 +449,6 @@ function AllFiltersDrawer({
                 );
               })}
             </div>
-          </DrawerGroup>
-
-          <DrawerGroup title="Площадь, м²">
-            <RangeSlider
-              min={bounds.minArea}
-              max={bounds.maxArea}
-              value={[filters.minArea, filters.maxArea]}
-              step={1}
-              format={(v) => formatArea(v)}
-              onChange={([lo, hi]) =>
-                setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
-              }
-            />
-          </DrawerGroup>
-
-          <DrawerGroup title="Этаж">
-            <RangeSlider
-              min={bounds.minFloor}
-              max={bounds.maxFloor}
-              value={[filters.minFloor, filters.maxFloor]}
-              step={1}
-              format={(v) => String(v)}
-              onChange={([lo, hi]) =>
-                setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
-              }
-            />
           </DrawerGroup>
 
           <DrawerGroup title="Особенности">
@@ -509,16 +510,18 @@ function DrawerGroup({
 // Filter components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RoomDropdown({
+function ParamsDropdown({
   label,
   value,
-  selected,
-  onToggle,
+  filters,
+  bounds,
+  setFilters,
 }: {
   label: string;
   value: string;
-  selected: Set<RoomType>;
-  onToggle: (rt: RoomType) => void;
+  filters: Filters;
+  bounds: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -535,6 +538,13 @@ function RoomDropdown({
       document.removeEventListener("touchstart", onDown);
     };
   }, [open]);
+
+  const toggleRoom = (rt: RoomType) =>
+    setFilters((f) => {
+      const next = new Set(f.room);
+      next.has(rt) ? next.delete(rt) : next.add(rt);
+      return { ...f, room: next };
+    });
 
   return (
     <div ref={ref} className="relative">
@@ -553,30 +563,113 @@ function RoomDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 border border-base-200 bg-base-0 p-3 shadow-card">
-          <div className="flex flex-wrap gap-2">
-            {ROOM_TYPES.map((rt) => {
-              const active = selected.has(rt.key);
-              return (
-                <Pressable
-                  key={rt.key}
-                  onClick={() => onToggle(rt.key)}
-                  rippleColor={
-                    active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-200 bg-base-0 p-5 shadow-card">
+          <ParamsBlock title="Количество спален">
+            <div className="grid grid-cols-3 gap-2">
+              {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
+                const active = filters.room.has(rt.key);
+                return (
+                  <Pressable
+                    key={rt.key}
+                    onClick={() => toggleRoom(rt.key)}
+                    rippleColor={
+                      active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"
+                    }
+                    className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
+                      active
+                        ? "bg-night-500 text-base-0"
+                        : "border border-base-200 bg-base-0 text-base-800"
+                    }`}
+                  >
+                    {rt.label}
+                  </Pressable>
+                );
+              })}
+            </div>
+          </ParamsBlock>
+
+          <ParamsBlock title="Площадь, м²">
+            <div className="border border-base-200 px-5 py-3">
+              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                <span>от {formatArea(filters.minArea)}</span>
+                <span>до {formatArea(filters.maxArea)}</span>
+              </div>
+              <div className="mt-1">
+                <RangeSlider
+                  min={bounds.minArea}
+                  max={bounds.maxArea}
+                  step={1}
+                  value={[filters.minArea, filters.maxArea]}
+                  format={(v) => formatArea(v)}
+                  onChange={([lo, hi]) =>
+                    setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
                   }
-                  className={`flex h-10 items-center px-4 font-sans text-body font-medium transition-colors ${
-                    active
-                      ? "bg-night-500 text-base-0"
-                      : "border border-base-200 bg-base-0 text-base-800"
-                  }`}
-                >
-                  {rt.label}
-                </Pressable>
-              );
-            })}
-          </div>
+                />
+              </div>
+            </div>
+          </ParamsBlock>
+
+          <ParamsBlock title="Этаж">
+            <div className="border border-base-200 px-5 py-3">
+              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                <span>{filters.minFloor}</span>
+                <span>{filters.maxFloor}</span>
+              </div>
+              <div className="mt-1">
+                <RangeSlider
+                  min={bounds.minFloor}
+                  max={bounds.maxFloor}
+                  step={1}
+                  value={[filters.minFloor, filters.maxFloor]}
+                  format={(v) => String(v)}
+                  onChange={([lo, hi]) =>
+                    setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <QuickChip
+                active={filters.excludeFirstFloor}
+                onClick={() =>
+                  setFilters((f) => ({
+                    ...f,
+                    excludeFirstFloor: !f.excludeFirstFloor,
+                  }))
+                }
+              >
+                Не первый
+              </QuickChip>
+              <QuickChip
+                active={filters.excludeLastFloor}
+                onClick={() =>
+                  setFilters((f) => ({
+                    ...f,
+                    excludeLastFloor: !f.excludeLastFloor,
+                  }))
+                }
+              >
+                Не последний
+              </QuickChip>
+            </div>
+          </ParamsBlock>
         </div>
       )}
+    </div>
+  );
+}
+
+function ParamsBlock({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="mb-2 font-sans text-small text-base-600">{title}</p>
+      {children}
     </div>
   );
 }
@@ -639,16 +732,15 @@ function DiscountChip({
   active: boolean;
   onClick: () => void;
 }) {
-  // Accent-coloured «Со скидкой» chip with a lightning glyph. No data link
-  // yet — toggle is purely visual until the feed exposes a discount flag.
+  // Always-blue brand chip. Toggle still flips a filter flag, but the
+  // visual remains solid accent so it stands out as the promo CTA.
+  // Slight dim when inactive so users still get feedback the toggle is off.
   return (
     <Pressable
       onClick={onClick}
-      rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,97,166,0.1)"}
-      className={`flex h-12 items-center gap-2 px-4 font-sans text-body font-medium transition-colors ${
-        active
-          ? "bg-accent text-base-0"
-          : "border border-base-200 bg-base-0 text-base-800"
+      rippleColor="rgba(255,255,255,0.25)"
+      className={`flex h-12 items-center gap-2 px-4 font-sans text-body font-medium text-base-0 transition-opacity ${
+        active ? "bg-accent" : "bg-accent/85 hover:bg-accent"
       }`}
     >
       <LightningIcon />
@@ -779,6 +871,22 @@ function buildActiveChips(
           minFloor: bounds.minFloor,
           maxFloor: bounds.maxFloor,
         })),
+    });
+  }
+
+  if (filters.excludeFirstFloor) {
+    chips.push({
+      key: "excludeFirstFloor",
+      label: "Не первый этаж",
+      remove: () => setFilters((f) => ({ ...f, excludeFirstFloor: false })),
+    });
+  }
+
+  if (filters.excludeLastFloor) {
+    chips.push({
+      key: "excludeLastFloor",
+      label: "Не последний этаж",
+      remove: () => setFilters((f) => ({ ...f, excludeLastFloor: false })),
     });
   }
 
