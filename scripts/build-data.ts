@@ -104,10 +104,17 @@ function transformProperty(raw: Record<string, unknown>): Apartment {
   };
 }
 
+// CRM status enum from the feed. 686340000 = «Свободна» (available); the
+// other observed value 686340001 = «Бронь» (reserved/booked) which we hide
+// from the catalog so the count matches the sales site.
+const STATUS_FREE = "686340000";
+
 function transformSection(raw: Record<string, unknown>): Section {
-  const apartments = arr(raw.mcdsoft_property as Record<string, unknown> | Record<string, unknown>[]).map(
-    transformProperty,
-  );
+  const apartments = arr(
+    raw.mcdsoft_property as Record<string, unknown> | Record<string, unknown>[],
+  )
+    .map(transformProperty)
+    .filter((a) => a.status === STATUS_FREE);
   const stats = emptyStats();
   const byFloor: Record<number, Apartment[]> = {};
   for (const apt of apartments) {

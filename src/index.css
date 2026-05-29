@@ -103,7 +103,10 @@
   background-repeat: no-repeat;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  margin-top: 0;
+  /* Center on the visual track: input is h-10 (40px), thumb is 16px →
+   * margin-top = (40 - 16) / 2 = 12px. Without this Chrome anchors the
+   * thumb at the input's top and the track ends up at the thumb's foot. */
+  margin-top: 12px;
 }
 .range-input::-moz-range-thumb {
   pointer-events: auto;

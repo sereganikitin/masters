@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { OverlayChrome } from "@/components/OverlayChrome";
 import { Pressable } from "@/components/Pressable";
 import { GenplanCanvas } from "@/components/GenplanCanvas";
-import { getHouse, ROOM_TYPES } from "@/data/complex";
-import { IconCube, IconMap } from "@/components/Icon";
+import { getHouse, ROOM_TYPES, formatPrice, formatArea } from "@/data/complex";
+import { IconCube, IconMap, IconArrowRight } from "@/components/Icon";
 import type { RoomType, Apartment } from "@/data/types";
 
 export function GenplanScreen() {
@@ -12,6 +12,13 @@ export function GenplanScreen() {
   const house = getHouse();
 
   const [rooms, setRooms] = useState<Set<RoomType>>(new Set());
+  /**
+   * Two-tap selection state. First tap on a section sets it as «active»
+   * and surfaces the info card; a second tap on the same active section
+   * navigates to the catalog. Tapping a different section just switches
+   * the active one (no nav).
+   */
+  const [activeSection, setActiveSection] = useState<number | null>(null);
 
   // A section is visible iff it has apartments matching the room filter.
   // Sections not in the feed yet are visible only when no filter is applied,
@@ -26,11 +33,19 @@ export function GenplanScreen() {
     return apts.some((a) => rooms.has(a.roomType));
   };
 
-  const openCatalog = (sectionNumber: number) => {
+  const navigateToCatalog = (sectionNumber: number) => {
     const params = new URLSearchParams();
     params.set("section", String(sectionNumber));
     if (rooms.size > 0) params.set("rooms", Array.from(rooms).join(","));
     nav(`/catalog?${params.toString()}`);
+  };
+
+  const handleSectionPick = (sectionNumber: number) => {
+    if (activeSection === sectionNumber) {
+      navigateToCatalog(sectionNumber);
+    } else {
+      setActiveSection(sectionNumber);
+    }
   };
 
   const toggleRoom = (rt: RoomType) =>
@@ -40,16 +55,102 @@ export function GenplanScreen() {
       return next;
     });
 
+  const activeInfo = useMemo(() => {
+    if (activeSection == null) return null;
+    const s = house.sections.find((x) => x.number === activeSection);
+    if (!s) return null;
+    const apts = Object.values(s.apartmentsByFloor).flat();
+    const filtered =
+      rooms.size === 0 ? apts : apts.filter((a) => rooms.has(a.roomType));
+    if (filtered.length === 0) return null;
+    const prices = filtered.map((a) => a.price);
+    const areas = filtered.map((a) => a.area);
+    return {
+      number: s.number,
+      storeysRange: s.storeysRange,
+      count: filtered.length,
+      minPrice: Math.min(...prices),
+      minArea: Math.min(...areas),
+      maxArea: Math.max(...areas),
+    };
+  }, [activeSection, house, rooms]);
+
   return (
-    <div className="relative h-full w-full bg-night-500">
+    <div
+      className="relative h-full w-full bg-night-500"
+      onClick={(e) => {
+        // Tapping the dark backdrop (anything that isn't a section / chrome /
+        // chip) clears the active selection.
+        if (e.target === e.currentTarget) setActiveSection(null);
+      }}
+    >
       <GenplanCanvas
         showOverlays
-        onSectionPick={openCatalog}
+        onSectionPick={handleSectionPick}
+        activeSection={activeSection}
         isSectionVisible={sectionVisible}
         labelOffsets={{ "5": [40, 0] }}
       />
 
       <OverlayChrome />
+
+      {/* Info card — surfaced after the first tap on a section. A second
+        * tap on the same section (or the «Выбрать квартиру» CTA) navigates
+        * to the catalog filtered to that section. */}
+      {activeInfo && (
+        <div className="pointer-events-none absolute right-10 top-10 z-30">
+          <div className="pointer-events-auto w-[320px] bg-base-0/95 p-6 shadow-card backdrop-blur-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-sans text-upper uppercase tracking-[0.3em] text-base-600">
+                  Секция {activeInfo.number}
+                </p>
+                <p className="mt-1 font-sans text-small text-base-600">
+                  {activeInfo.storeysRange} эт.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSection(null)}
+                className="grid h-9 w-9 place-items-center text-base-600 hover:text-base-800"
+                aria-label="Закрыть"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round">
+                  <path d="M2 2l10 10M12 2L2 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-3 border-t border-base-200 pt-5 font-sans text-small">
+              <div className="flex justify-between">
+                <span className="text-base-600">Квартир</span>
+                <span className="font-medium text-base-800">{activeInfo.count}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-base-600">Площадь</span>
+                <span className="font-medium text-base-800">
+                  {formatArea(activeInfo.minArea)}–{formatArea(activeInfo.maxArea)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-base-600">Цена от</span>
+                <span className="font-medium text-base-800">
+                  {formatPrice(activeInfo.minPrice)}
+                </span>
+              </div>
+            </div>
+
+            <Pressable
+              onClick={() => navigateToCatalog(activeInfo.number)}
+              rippleColor="rgba(255,255,255,0.25)"
+              className="mt-6 flex h-12 w-full items-center justify-between bg-accent px-5 font-sans text-body font-medium text-base-0"
+            >
+              Выбрать квартиру
+              <IconArrowRight size={18} />
+            </Pressable>
+          </div>
+        </div>
+      )}
 
       {/* Bottom-left — room filter chips. z-30 above overlay SVGs.
         * No Reveal wrapper — IntersectionObserver is unreliable on the scaled stage. */}
