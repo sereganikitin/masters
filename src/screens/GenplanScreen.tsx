@@ -55,6 +55,20 @@ export function GenplanScreen() {
       return next;
     });
 
+  // Room-type chips are only clickable when at least one apartment in any
+  // section matches that type. Types that aren't in the live feed (e.g.
+  // currently no Studios or 4+ at МАСТЕРС) render dimmed and inert; if the
+  // feed later adds them, they automatically re-enable.
+  const availableRoomTypes = useMemo<Set<RoomType>>(() => {
+    const s = new Set<RoomType>();
+    for (const section of house.sections) {
+      for (const apt of Object.values(section.apartmentsByFloor).flat()) {
+        s.add(apt.roomType);
+      }
+    }
+    return s;
+  }, [house]);
+
   const activeInfo = useMemo(() => {
     if (activeSection == null) return null;
     const s = house.sections.find((x) => x.number === activeSection);
@@ -157,17 +171,22 @@ export function GenplanScreen() {
       <div className="absolute bottom-10 left-10 z-30">
         <div className="flex flex-wrap items-center gap-2">
           {ROOM_TYPES.map((rt) => {
-            const active = rooms.has(rt.key);
+            const enabled = availableRoomTypes.has(rt.key);
+            const active = enabled && rooms.has(rt.key);
             return (
               <Pressable
                 key={rt.key}
-                onClick={() => toggleRoom(rt.key)}
+                onClick={() => enabled && toggleRoom(rt.key)}
+                disabled={!enabled}
                 rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
                 className={`h-12 px-5 font-sans text-body font-medium transition-colors ${
-                  active
-                    ? "bg-night-500 text-base-0"
-                    : "border border-base-200 bg-base-0/95 text-base-800"
+                  !enabled
+                    ? "cursor-not-allowed border border-base-200 bg-base-0/50 text-base-800/35"
+                    : active
+                      ? "bg-night-500 text-base-0"
+                      : "border border-base-600 bg-base-0/95 text-base-800"
                 }`}
+                title={!enabled ? "Нет квартир такого типа" : undefined}
               >
                 {rt.label}
               </Pressable>

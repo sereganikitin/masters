@@ -154,9 +154,12 @@
     font: inherit;
     color: inherit;
     background: none;
-    border: 0;
     padding: 0;
     cursor: pointer;
+    /* NB: do NOT set `border: 0` here — that shorthand resets
+     * border-style: none which makes Tailwind's `border` utility
+     * silently invisible. Preflight already sets border-width: 0 by
+     * default, so unstyled buttons still have no visible border. */
   }
 
   img {

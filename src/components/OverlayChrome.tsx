@@ -23,11 +23,7 @@ export function OverlayChrome({ onClose, onBack, backLabel }: OverlayChromeProps
           <span className="font-sans text-body font-medium">{backLabel ?? "Назад"}</span>
         </button>
       )}
-      <CloseButton
-        onClick={close}
-        variant="dark"
-        className="absolute right-10 top-10 z-30"
-      />
+      <CloseButton onClick={close} className="absolute right-10 top-10 z-30" />
     </>
   );
 }
