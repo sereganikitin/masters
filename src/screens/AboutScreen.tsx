@@ -8,11 +8,8 @@ import { AboutMenu } from "@/components/AboutMenu";
 import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
-import {
-  IconClose,
-  IconArrowRight,
-  IconPlay,
-} from "@/components/Icon";
+import { IconArrowRight, IconPlay } from "@/components/Icon";
+import { CloseButton } from "@/components/CloseButton";
 import { useContent } from "@/lib/useContent";
 import { specialFormatsApi, type SpecialFormat } from "@/lib/cms";
 import {
@@ -33,14 +30,10 @@ export function AboutScreen() {
   const nav = useNavigate();
   return (
     <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
-      <Pressable
+      <CloseButton
         onClick={() => nav("/")}
-        rippleColor="rgba(0,0,0,0.12)"
-        className="absolute right-9 top-9 z-50 grid h-14 w-14 place-items-center bg-base-0 text-base-800 shadow-card"
-        aria-label="Закрыть"
-      >
-        <IconClose size={22} />
-      </Pressable>
+        className="absolute right-9 top-9 z-50"
+      />
 
       <div
         className="h-full w-full overflow-y-auto"
