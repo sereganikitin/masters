@@ -88,27 +88,35 @@
   background: transparent;
   height: 100%;
 }
+/* Rectangular drag-handle thumb with 3 vertical grip lines, vertically
+ * centred on the track (the native track is invisible so the thumb sits
+ * at the slider's centreline = the visual track's centreline). */
 .range-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
   width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #19212C;
-  border: 3px solid #FFFFFF;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  height: 16px;
+  border-radius: 3px;
+  background-color: #19212C;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'><path d='M2 1v6M5 1v6M8 1v6' stroke='%23FFFFFF' stroke-width='1' stroke-linecap='round' opacity='0.85'/></svg>");
+  background-position: center;
+  background-repeat: no-repeat;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   margin-top: 0;
 }
 .range-input::-moz-range-thumb {
   pointer-events: auto;
   width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #19212C;
-  border: 3px solid #FFFFFF;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  height: 16px;
+  border: none;
+  border-radius: 3px;
+  background-color: #19212C;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'><path d='M2 1v6M5 1v6M8 1v6' stroke='%23FFFFFF' stroke-width='1' stroke-linecap='round' opacity='0.85'/></svg>");
+  background-position: center;
+  background-repeat: no-repeat;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 @layer base {

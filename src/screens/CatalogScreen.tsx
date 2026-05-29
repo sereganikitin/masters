@@ -318,7 +318,7 @@ export function CatalogScreen() {
               <button
                 type="button"
                 onClick={reset}
-                className="ml-auto flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
+                className="ml-auto flex h-10 items-center gap-2 border border-base-800/30 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
               >
                 <CrossIcon />
                 Сбросить все
@@ -551,7 +551,7 @@ function ParamsDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-[72px] w-full items-center justify-between border border-base-200 bg-base-0 px-5 text-left transition-colors hover:border-base-300"
+        className="flex h-[72px] w-full items-center justify-between border border-base-800/30 bg-base-0 px-5 text-left transition-colors hover:border-base-300"
       >
         <div className="flex min-w-0 flex-col">
           <span className="font-sans text-[12px] text-base-600">{label}</span>
@@ -563,9 +563,9 @@ function ParamsDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-200 bg-base-0 p-5 shadow-card">
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-800/30 bg-base-0 p-5 shadow-card">
           <ParamsBlock title="Количество спален">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
                 const active = filters.room.has(rt.key);
                 return (
@@ -578,7 +578,7 @@ function ParamsDropdown({
                     className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
                       active
                         ? "bg-night-500 text-base-0"
-                        : "border border-base-200 bg-base-0 text-base-800"
+                        : "border border-base-800/30 bg-base-0 text-base-800"
                     }`}
                   >
                     {rt.label}
@@ -589,44 +589,42 @@ function ParamsDropdown({
           </ParamsBlock>
 
           <ParamsBlock title="Площадь, м²">
-            <div className="border border-base-200 px-5 py-3">
+            <div className="border border-base-800/30 px-5 py-3">
               <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                 <span>от {formatArea(filters.minArea)}</span>
                 <span>до {formatArea(filters.maxArea)}</span>
               </div>
-              <div className="mt-1">
-                <RangeSlider
-                  min={bounds.minArea}
-                  max={bounds.maxArea}
-                  step={1}
-                  value={[filters.minArea, filters.maxArea]}
-                  format={(v) => formatArea(v)}
-                  onChange={([lo, hi]) =>
-                    setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
-                  }
-                />
-              </div>
+              <RangeSlider
+                hideValues
+                min={bounds.minArea}
+                max={bounds.maxArea}
+                step={1}
+                value={[filters.minArea, filters.maxArea]}
+                format={(v) => formatArea(v)}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
+                }
+              />
             </div>
           </ParamsBlock>
 
           <ParamsBlock title="Этаж">
-            <div className="border border-base-200 px-5 py-3">
+            <div className="border border-base-800/30 px-5 py-3">
               <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
-                <span>{filters.minFloor}</span>
-                <span>{filters.maxFloor}</span>
+                <span>от {filters.minFloor}</span>
+                <span>до {filters.maxFloor}</span>
               </div>
-              <div className="mt-1">
-                <RangeSlider
-                  min={bounds.minFloor}
-                  max={bounds.maxFloor}
-                  step={1}
-                  value={[filters.minFloor, filters.maxFloor]}
-                  format={(v) => String(v)}
-                  onChange={([lo, hi]) =>
-                    setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
-                  }
-                />
-              </div>
+              <RangeSlider
+                hideValues
+                min={bounds.minFloor}
+                max={bounds.maxFloor}
+                step={1}
+                value={[filters.minFloor, filters.maxFloor]}
+                format={(v) => String(v)}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
+                }
+              />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <QuickChip
@@ -683,7 +681,7 @@ function DropdownPlaceholder({
 }) {
   // Static placeholder — no data backing yet (e.g. «Срок сдачи»).
   return (
-    <div className="flex h-[72px] w-full cursor-default items-center justify-between border border-base-200 bg-base-0 px-5 text-left">
+    <div className="flex h-[72px] w-full cursor-default items-center justify-between border border-base-800/30 bg-base-0 px-5 text-left">
       <div className="flex min-w-0 flex-col">
         <span className="font-sans text-[12px] text-base-600">{label}</span>
         <span className="mt-1 truncate font-sans text-body font-medium text-base-800">
@@ -711,7 +709,7 @@ function PriceSliderCard({
   const toMln = (v: number) =>
     (v / 1_000_000).toFixed(1).replace(".", ",");
   return (
-    <div className="flex h-[72px] flex-col justify-center border border-base-200 bg-base-0 px-5">
+    <div className="flex h-[72px] flex-col justify-center border border-base-800/30 bg-base-0 px-5">
       <span className="font-sans text-[12px] text-base-600">{label}</span>
       <RangeSlider
         min={min}
@@ -765,7 +763,7 @@ function QuickChip({
       className={`flex h-12 items-center px-4 font-sans text-body font-medium transition-colors ${
         active
           ? "bg-night-500 text-base-0"
-          : "border border-base-200 bg-base-0 text-base-800"
+          : "border border-base-800/30 bg-base-0 text-base-800"
       }`}
     >
       {children}
@@ -784,7 +782,7 @@ function RemovableChip({
     <button
       type="button"
       onClick={onRemove}
-      className="flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
+      className="flex h-10 items-center gap-2 border border-base-800/30 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
     >
       <CrossIcon />
       {children}

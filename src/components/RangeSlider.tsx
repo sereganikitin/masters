@@ -5,6 +5,9 @@ interface RangeSliderProps {
   step: number;
   onChange: (v: [number, number]) => void;
   format: (v: number) => string;
+  /** Hide the built-in min/max value row above the track. Use when the
+   *  parent already shows labelled values (e.g. «от 41,8 / до 137,6»). */
+  hideValues?: boolean;
 }
 
 /**
@@ -22,6 +25,7 @@ export function RangeSlider({
   step,
   onChange,
   format,
+  hideValues = false,
 }: RangeSliderProps) {
   const [lo, hi] = value;
   const range = max - min || 1;
@@ -30,12 +34,14 @@ export function RangeSlider({
 
   return (
     <div className="select-none">
-      <div className="flex items-center justify-between font-sans text-small font-medium text-base-800">
-        <span>{format(lo)}</span>
-        <span>{format(hi)}</span>
-      </div>
+      {!hideValues && (
+        <div className="flex items-center justify-between font-sans text-small font-medium text-base-800">
+          <span>{format(lo)}</span>
+          <span>{format(hi)}</span>
+        </div>
+      )}
 
-      <div className="relative mt-3 h-10">
+      <div className={`relative h-10 ${hideValues ? "" : "mt-3"}`}>
         {/* Track */}
         <div className="absolute left-0 right-0 top-1/2 h-[3px] -translate-y-1/2 bg-base-200" />
         {/* Active range fill */}
