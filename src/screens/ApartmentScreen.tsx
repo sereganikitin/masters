@@ -4,6 +4,9 @@ import { OverlayChrome } from "@/components/OverlayChrome";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
+import { OverlayLayer } from "@/components/OverlayLayer";
+import { GenplanCanvas } from "@/components/GenplanCanvas";
+import { useOverlays } from "@/lib/useOverlays";
 import {
   getApartment,
   getHouse,
@@ -11,8 +14,9 @@ import {
   formatPrice,
   roomTypeLabel,
 } from "@/data/complex";
-import { apartmentPlanUrl } from "@/lib/plans";
+import { apartmentPlanUrl, floorPlanUrl } from "@/lib/plans";
 import { IconArrowRight, IconMap, IconHome } from "@/components/Icon";
+import type { Apartment } from "@/data/types";
 
 // Subsidised-mortgage estimate per Figma. Standard kiosk assumption:
 // 6% annual rate, 20% down-payment, 20-year term (240 months).
@@ -26,14 +30,14 @@ function monthlyMortgage(price: number): number {
 
 const RUB = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
 
-type PlanTab = "furnished" | "floor" | "genplan" | "plan2d" | "views";
+type PlanTab = "plan" | "floor" | "genplan" | "views";
 
 export function ApartmentScreen() {
   const { apartmentId } = useParams();
   const nav = useNavigate();
   const apt = apartmentId ? getApartment(apartmentId) : undefined;
   const house = getHouse();
-  const [planTab, setPlanTab] = useState<PlanTab>("plan2d");
+  const [planTab, setPlanTab] = useState<PlanTab>("plan");
 
   if (!apt) {
     return (
@@ -66,16 +70,13 @@ export function ApartmentScreen() {
   const visibleTags = tags.slice(0, VISIBLE);
   const moreCount = Math.max(0, tags.length - VISIBLE);
 
-  const planTabs: { key: PlanTab; label: string; onClick?: () => void }[] = [
-    { key: "furnished", label: "С мебелью" },
-    {
-      key: "floor",
-      label: "На этаже",
-      onClick: () => nav(`/floor/${apt.sectionNumber}/${apt.floor}`),
-    },
-    { key: "genplan", label: "Генплан", onClick: () => nav("/genplan") },
-    { key: "plan2d", label: "2D План" },
-    { key: "views", label: "Вид из окон" },
+  // 4-tab in-card view switcher per the latest Figma. «Вид из окон» is a
+  // placeholder until the panorama feed is wired up.
+  const planTabs: { key: PlanTab; label: string; disabled?: boolean }[] = [
+    { key: "plan", label: "Планировка" },
+    { key: "floor", label: "На этаже" },
+    { key: "genplan", label: "Генплан" },
+    { key: "views", label: "Вид из окон", disabled: true },
   ];
 
   const monthly = monthlyMortgage(apt.price);
@@ -91,25 +92,19 @@ export function ApartmentScreen() {
         {/* Plan column */}
         <Reveal mode="left" delay={80} className="h-full">
           <div className="relative flex h-full flex-col bg-base-0 shadow-card">
-            {/* Plan canvas */}
+            {/* Plan canvas — switches with the bottom tabs without leaving the screen. */}
             <div className="relative min-h-0 flex-1">
-              <PlanImage
-                src={apartmentPlanUrl(apt)}
-                alt={`План квартиры №${apt.number}`}
-                className="absolute inset-0 h-full w-full object-contain p-16"
-                fallback={
-                  <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
-                    План №{apt.number} не загрузился
-                  </div>
-                }
-              />
-              {/* Lot number badge on plan, per Figma */}
-              <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
-                №{apt.number}
-              </div>
+              <PlanTabContent tab={planTab} apt={apt} />
+
+              {/* Lot number badge, only on the apartment plan view */}
+              {planTab === "plan" && (
+                <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
+                  №{apt.number}
+                </div>
+              )}
             </div>
 
-            {/* Bottom toolbar — 5 view tabs per Figma frame 427319752 */}
+            {/* Bottom toolbar — in-card tab switcher */}
             <div className="flex-shrink-0 border-t border-base-200 px-6 py-5">
               <div className="flex items-center gap-2">
                 {planTabs.map((t) => {
@@ -117,18 +112,19 @@ export function ApartmentScreen() {
                   return (
                     <Pressable
                       key={t.key}
-                      onClick={() => {
-                        if (t.onClick) t.onClick();
-                        else setPlanTab(t.key);
-                      }}
+                      onClick={() => !t.disabled && setPlanTab(t.key)}
+                      disabled={t.disabled}
                       rippleColor={
                         isActive ? "rgba(255,255,255,0.25)" : "rgba(0,97,166,0.12)"
                       }
                       className={`h-11 px-5 font-sans text-small font-medium transition-colors ${
-                        isActive
-                          ? "bg-night-500 text-base-0"
-                          : "border border-base-200 bg-base-0 text-base-800"
+                        t.disabled
+                          ? "cursor-not-allowed border border-base-200 bg-base-0 text-base-800/35"
+                          : isActive
+                            ? "bg-night-500 text-base-0"
+                            : "border border-base-600 bg-base-0 text-base-800"
                       }`}
+                      title={t.disabled ? "Появится позже" : undefined}
                     >
                       {t.label}
                     </Pressable>
@@ -245,6 +241,91 @@ export function ApartmentScreen() {
             </div>
           </div>
         </Reveal>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab content — apartment plan / floor plan / genplan / views placeholder
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PlanTabContent({ tab, apt }: { tab: PlanTab; apt: Apartment }) {
+  switch (tab) {
+    case "plan":
+      return (
+        <PlanImage
+          src={apartmentPlanUrl(apt)}
+          alt={`План квартиры №${apt.number}`}
+          className="absolute inset-0 h-full w-full object-contain p-16"
+          fallback={
+            <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
+              План №{apt.number} не загрузился
+            </div>
+          }
+        />
+      );
+    case "floor":
+      return <FloorPlanView apt={apt} />;
+    case "genplan":
+      return <GenplanView apt={apt} />;
+    case "views":
+      return (
+        <div className="grid h-full place-items-center px-12 text-center">
+          <div>
+            <p className="font-display text-h4 font-semibold text-base-800">
+              Вид из окон
+            </p>
+            <p className="mt-3 max-w-[420px] font-sans text-body text-base-600">
+              Появится позже — после интеграции с панорамным фидом.
+            </p>
+          </div>
+        </div>
+      );
+  }
+}
+
+function FloorPlanView({ apt }: { apt: Apartment }) {
+  // Locate the overlay drawn for this specific apartment so we can highlight it
+  // among all lots on the floor plan.
+  const { overlays } = useOverlays("floor", `${apt.sectionNumber}_${apt.floor}`);
+  const highlight = overlays.find((o) => o.entityId === apt.id);
+  return (
+    <div className="relative h-full w-full">
+      <PlanImage
+        src={floorPlanUrl(apt.sectionNumber, apt.floor)}
+        alt={`План этажа ${apt.floor}, секция ${apt.sectionNumber}`}
+        className="absolute inset-0 h-full w-full object-contain p-12"
+        fallback={
+          <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
+            План этажа недоступен
+          </div>
+        }
+      />
+      <OverlayLayer
+        scope="floor"
+        scopeKey={`${apt.sectionNumber}_${apt.floor}`}
+        highlightId={highlight?.id ?? null}
+        showLabels={false}
+      />
+      <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
+        Этаж {apt.floor} · Секция {apt.sectionNumber}
+      </div>
+    </div>
+  );
+}
+
+function GenplanView({ apt }: { apt: Apartment }) {
+  // Mini-genplan with this apartment's section highlighted. Section chips
+  // stay non-interactive — this is a context preview, not a navigator.
+  return (
+    <div className="relative h-full w-full">
+      <GenplanCanvas
+        showOverlays
+        activeSection={apt.sectionNumber}
+      />
+      <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-0 mix-blend-difference">
+        Корпус {apt.buildingNumber || 1} · Секция {apt.sectionNumber}
       </div>
     </div>
   );
