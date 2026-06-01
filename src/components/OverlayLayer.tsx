@@ -28,6 +28,10 @@ interface OverlayLayerProps {
    * with pointer-events disabled — the highlight stays purely visual.
    * Used by embedded context views (apartment card → genplan tab). */
   interactive?: boolean;
+  /** Scale the chip label (font + padding + height) by this factor. 1.0
+   * matches the kiosk Genplan; 1.5 makes the chip read as larger when the
+   * canvas is embedded smaller (e.g. inside the apartment card). */
+  chipScale?: number;
 }
 
 /**
@@ -52,6 +56,7 @@ export function OverlayLayer({
   isVisible,
   labelOffsets,
   interactive = true,
+  chipScale = 1,
 }: OverlayLayerProps) {
   const { overlays: rawOverlays } = useOverlays(scope, scopeKey);
   const overlays = isVisible ? rawOverlays.filter(isVisible) : rawOverlays;
@@ -167,6 +172,7 @@ export function OverlayLayer({
                 secondary={secondary}
                 emphasised={isHighlighted}
                 dimmed={!enabled}
+                scale={chipScale}
               />
             )}
           </g>
@@ -185,26 +191,36 @@ interface ChipLabelProps {
   emphasised: boolean;
   /** Filtered out — chip dims. */
   dimmed: boolean;
+  /** Multiplier applied to every chip dimension (font, padding, height). */
+  scale?: number;
 }
 
-function ChipLabel({ cx, cy, primary, secondary, emphasised, dimmed }: ChipLabelProps) {
+function ChipLabel({
+  cx,
+  cy,
+  primary,
+  secondary,
+  emphasised,
+  dimmed,
+  scale: sizeScale = 1,
+}: ChipLabelProps) {
   // Coordinates are in viewBox space (1920×1080). Chip kept compact and light;
   // always Imperial Night tone — only scale/opacity respond to state, no colour change.
-  const fontPx = 11;
+  const fontPx = 11 * sizeScale;
   const charW = fontPx * 0.62;
-  const padX = 9;
+  const padX = 9 * sizeScale;
   const sepW = secondary ? fontPx * 1.4 : 0;
   const w = Math.round(
     primary.length * charW + sepW + secondary.length * charW + padX * 2,
   );
-  const h = 22;
+  const h = 22 * sizeScale;
 
   const opacity = dimmed ? 0.35 : 1;
-  const scale = emphasised ? 1.08 : 1;
+  const emphasis = emphasised ? 1.08 : 1;
 
   return (
     <g
-      transform={`translate(${cx}, ${cy}) scale(${scale})`}
+      transform={`translate(${cx}, ${cy}) scale(${emphasis})`}
       style={{
         transition: "transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 220ms ease",
         transformBox: "fill-box",
@@ -217,12 +233,12 @@ function ChipLabel({ cx, cy, primary, secondary, emphasised, dimmed }: ChipLabel
         y={-h / 2}
         width={w}
         height={h}
-        rx={3}
+        rx={3 * sizeScale}
         fill="#19212C"
       />
       <text
         x={0}
-        y={4}
+        y={fontPx * 0.36}
         fontFamily="Onest, system-ui, sans-serif"
         fontSize={fontPx}
         fontWeight={500}

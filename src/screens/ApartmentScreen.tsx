@@ -294,15 +294,20 @@ function PlanTabContent({ tab, apt }: { tab: PlanTab; apt: Apartment }) {
  * the overlay but cover-cropped the photo, knocking the outlines out of place.
  */
 function StageBox({ children }: { children: React.ReactNode }) {
-  // Padding-bottom trick keeps the 16:9 ratio (56.25% of parent width = height)
-  // and the flex parent vertically centres the resulting box in the available
-  // space. CSS Grid's `place-items` only centred the child INSIDE its auto-sized
-  // row, leaving the extra height as empty space below the plan.
+  // Sandwich the 16:9 box between two `1fr` spacer rows so the extra
+  // vertical space is split equally above and below. Previous attempts
+  // (place-items / flex items-center + padding-bottom) consistently
+  // collapsed the 16:9 row to the top in this layout context.
   return (
-    <div className="flex h-full w-full items-center justify-center bg-night-500/5">
+    <div
+      className="grid h-full w-full bg-night-500/5"
+      style={{ gridTemplateRows: "1fr auto 1fr" }}
+    >
+      <div />
       <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
         <div className="absolute inset-0">{children}</div>
       </div>
+      <div />
     </div>
   );
 }
@@ -348,6 +353,7 @@ function GenplanView({ apt }: { apt: Apartment }) {
       <GenplanCanvas
         showOverlays
         staticOverlay
+        chipScale={1.6}
         activeSection={apt.sectionNumber}
         isSectionVisible={(n) => n === apt.sectionNumber}
       />

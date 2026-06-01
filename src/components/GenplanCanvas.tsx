@@ -65,6 +65,9 @@ interface GenplanCanvasProps {
   /** Static-overlay mode: highlight stays purely visual, no hover/click on
    * the polygon. Used by ApartmentScreen's in-card genplan preview. */
   staticOverlay?: boolean;
+  /** Scale factor applied to the section chip drawn by OverlayLayer.
+   * 1 = kiosk default; bigger values read better in embedded previews. */
+  chipScale?: number;
 }
 
 /**
@@ -84,6 +87,7 @@ export function GenplanCanvas({
   sectionOffsets,
   poiOffsetY = 0,
   staticOverlay = false,
+  chipScale = 1,
 }: GenplanCanvasProps) {
   const house = getHouse();
   const { overlays, loading } = useOverlays("genplan", "");
@@ -127,6 +131,7 @@ export function GenplanCanvas({
           scope="genplan"
           highlightId={activeOverlayId}
           interactive={!staticOverlay}
+          chipScale={chipScale}
           isVisible={(o) => {
             const n = Number(o.entityId);
             return Number.isNaN(n) ? true : visibleSections.includes(n);
