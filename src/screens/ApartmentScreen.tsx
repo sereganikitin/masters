@@ -294,13 +294,14 @@ function PlanTabContent({ tab, apt }: { tab: PlanTab; apt: Apartment }) {
  * the overlay but cover-cropped the photo, knocking the outlines out of place.
  */
 function StageBox({ children }: { children: React.ReactNode }) {
+  // Padding-bottom trick keeps the 16:9 ratio (56.25% of parent width = height)
+  // and the flex parent vertically centres the resulting box in the available
+  // space. CSS Grid's `place-items` only centred the child INSIDE its auto-sized
+  // row, leaving the extra height as empty space below the plan.
   return (
-    <div className="grid h-full w-full place-items-center bg-night-500/5">
-      <div
-        className="relative w-full"
-        style={{ aspectRatio: "1920 / 1080" }}
-      >
-        {children}
+    <div className="flex h-full w-full items-center justify-center bg-night-500/5">
+      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+        <div className="absolute inset-0">{children}</div>
       </div>
     </div>
   );
