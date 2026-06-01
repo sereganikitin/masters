@@ -105,8 +105,8 @@ export function ApartmentScreen() {
             </div>
 
             {/* Bottom toolbar — in-card tab switcher */}
-            <div className="flex-shrink-0 border-t border-base-200 px-6 py-5">
-              <div className="flex items-center gap-2">
+            <div className="flex-shrink-0 border-t border-base-200 px-8 py-6">
+              <div className="flex items-center gap-3">
                 {planTabs.map((t) => {
                   const isActive = planTab === t.key;
                   return (
@@ -117,7 +117,7 @@ export function ApartmentScreen() {
                       rippleColor={
                         isActive ? "rgba(255,255,255,0.25)" : "rgba(0,97,166,0.12)"
                       }
-                      className={`h-11 px-5 font-sans text-small font-medium transition-colors ${
+                      className={`h-14 px-8 font-sans text-body font-medium transition-colors ${
                         t.disabled
                           ? "cursor-not-allowed border border-base-200 bg-base-0 text-base-800/35"
                           : isActive
@@ -285,13 +285,34 @@ function PlanTabContent({ tab, apt }: { tab: PlanTab; apt: Apartment }) {
   }
 }
 
+/**
+ * Wrap children in a 16:9 box centred inside the parent. The polygon overlays
+ * are drawn at fixed 1920×1080 coordinates and rendered with
+ * preserveAspectRatio="none", so they only align with the photo if photo and
+ * SVG fill an area that has the same aspect ratio as 1920×1080.
+ * Without this wrapper, embedded views (smaller, squarer card area) stretched
+ * the overlay but cover-cropped the photo, knocking the outlines out of place.
+ */
+function StageBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-night-500/5">
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: "1920 / 1080", maxHeight: "100%" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function FloorPlanView({ apt }: { apt: Apartment }) {
   // Locate the overlay drawn for this specific apartment so we can highlight it
   // among all lots on the floor plan.
   const { overlays } = useOverlays("floor", `${apt.sectionNumber}_${apt.floor}`);
   const highlight = overlays.find((o) => o.entityId === apt.id);
   return (
-    <div className="relative h-full w-full">
+    <StageBox>
       <PlanImage
         src={floorPlanUrl(apt.sectionNumber, apt.floor)}
         alt={`План этажа ${apt.floor}, секция ${apt.sectionNumber}`}
@@ -311,23 +332,22 @@ function FloorPlanView({ apt }: { apt: Apartment }) {
       <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
         Этаж {apt.floor} · Секция {apt.sectionNumber}
       </div>
-    </div>
+    </StageBox>
   );
 }
 
 function GenplanView({ apt }: { apt: Apartment }) {
-  // Mini-genplan with this apartment's section highlighted. Section chips
-  // stay non-interactive — this is a context preview, not a navigator.
+  // Mini-genplan focused on this apartment's section only — every other
+  // section's outline + chip is filtered out via isSectionVisible. No
+  // onSectionPick → all polygons render non-interactive (context only).
   return (
-    <div className="relative h-full w-full">
+    <StageBox>
       <GenplanCanvas
         showOverlays
         activeSection={apt.sectionNumber}
+        isSectionVisible={(n) => n === apt.sectionNumber}
       />
-      <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-0 mix-blend-difference">
-        Корпус {apt.buildingNumber || 1} · Секция {apt.sectionNumber}
-      </div>
-    </div>
+    </StageBox>
   );
 }
 
