@@ -334,6 +334,8 @@ function FloorPlanView({ apt }: { apt: Apartment }) {
           scope="floor"
           scopeKey={`${apt.sectionNumber}_${apt.floor}`}
           highlightId={highlight?.id ?? null}
+          interactive={false}
+          isVisible={(o) => o.entityId === apt.id}
           showLabels={false}
         />
       </StageBox>
