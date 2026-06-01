@@ -318,27 +318,32 @@ function FloorPlanView({ apt }: { apt: Apartment }) {
   const { overlays } = useOverlays("floor", `${apt.sectionNumber}_${apt.floor}`);
   const highlight = overlays.find((o) => o.entityId === apt.id);
   return (
-    <StageBox>
-      <PlanImage
-        src={floorPlanUrl(apt.sectionNumber, apt.floor)}
-        alt={`План этажа ${apt.floor}, секция ${apt.sectionNumber}`}
-        className="absolute inset-0 h-full w-full object-contain"
-        fallback={
-          <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
-            План этажа недоступен
-          </div>
-        }
-      />
-      <OverlayLayer
-        scope="floor"
-        scopeKey={`${apt.sectionNumber}_${apt.floor}`}
-        highlightId={highlight?.id ?? null}
-        showLabels={false}
-      />
-      <div className="pointer-events-none absolute left-8 top-8 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
+    <>
+      <StageBox>
+        <PlanImage
+          src={floorPlanUrl(apt.sectionNumber, apt.floor)}
+          alt={`План этажа ${apt.floor}, секция ${apt.sectionNumber}`}
+          className="absolute inset-0 h-full w-full object-contain"
+          fallback={
+            <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
+              План этажа недоступен
+            </div>
+          }
+        />
+        <OverlayLayer
+          scope="floor"
+          scopeKey={`${apt.sectionNumber}_${apt.floor}`}
+          highlightId={highlight?.id ?? null}
+          showLabels={false}
+        />
+      </StageBox>
+      {/* Floor + section caption — anchored to the top of the plan card so it
+        sits roughly level with the OverlayChrome «Секция N» pill on the
+        kiosk header instead of floating over the centred 16:9 image. */}
+      <div className="pointer-events-none absolute left-8 top-6 z-10 font-display text-[14px] font-medium uppercase tracking-[0.2em] text-base-600">
         Этаж {apt.floor} · Секция {apt.sectionNumber}
       </div>
-    </StageBox>
+    </>
   );
 }
 
