@@ -322,7 +322,7 @@ function FloorPlanView({ apt }: { apt: Apartment }) {
       <PlanImage
         src={floorPlanUrl(apt.sectionNumber, apt.floor)}
         alt={`План этажа ${apt.floor}, секция ${apt.sectionNumber}`}
-        className="absolute inset-0 h-full w-full object-contain p-12"
+        className="absolute inset-0 h-full w-full object-contain"
         fallback={
           <div className="grid h-full place-items-center font-sans text-h5 text-base-600">
             План этажа недоступен
