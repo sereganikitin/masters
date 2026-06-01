@@ -295,10 +295,10 @@ function PlanTabContent({ tab, apt }: { tab: PlanTab; apt: Apartment }) {
  */
 function StageBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-night-500/5">
+    <div className="grid h-full w-full place-items-center bg-night-500/5">
       <div
         className="relative w-full"
-        style={{ aspectRatio: "1920 / 1080", maxHeight: "100%" }}
+        style={{ aspectRatio: "1920 / 1080" }}
       >
         {children}
       </div>
@@ -338,12 +338,15 @@ function FloorPlanView({ apt }: { apt: Apartment }) {
 
 function GenplanView({ apt }: { apt: Apartment }) {
   // Mini-genplan focused on this apartment's section only — every other
-  // section's outline + chip is filtered out via isSectionVisible. No
-  // onSectionPick → all polygons render non-interactive (context only).
+  // section's outline + chip is filtered out via isSectionVisible. With
+  // staticOverlay the polygon paints in the «active» (blue fill) state
+  // without reacting to hover or clicks: it's a context preview, not a
+  // navigator.
   return (
     <StageBox>
       <GenplanCanvas
         showOverlays
+        staticOverlay
         activeSection={apt.sectionNumber}
         isSectionVisible={(n) => n === apt.sectionNumber}
       />

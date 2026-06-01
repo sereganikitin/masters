@@ -24,6 +24,10 @@ interface OverlayLayerProps {
    * Useful when a polygon's geometric centre doesn't read as the visual centre
    * (e.g. building facing at an angle). Keyed by entityId. */
   labelOffsets?: Record<string, [number, number]>;
+  /** When false, hover/cursor state is suppressed and the SVG is rendered
+   * with pointer-events disabled — the highlight stays purely visual.
+   * Used by embedded context views (apartment card → genplan tab). */
+  interactive?: boolean;
 }
 
 /**
@@ -47,10 +51,14 @@ export function OverlayLayer({
   isEnabled,
   isVisible,
   labelOffsets,
+  interactive = true,
 }: OverlayLayerProps) {
   const { overlays: rawOverlays } = useOverlays(scope, scopeKey);
   const overlays = isVisible ? rawOverlays.filter(isVisible) : rawOverlays;
   const [hoverId, setHoverId] = useState<number | null>(null);
+  // In static mode every hover tracker is short-circuited so the highlight
+  // never flickers when the cursor sweeps across the embedded preview.
+  const effectiveHoverId = interactive ? hoverId : null;
 
   if (overlays.length === 0) return null;
 
@@ -71,7 +79,7 @@ export function OverlayLayer({
       {overlays.map((o) => {
         const enabled = isEnabled ? isEnabled(o) : true;
         const isActive = enabled && highlightId === o.id;
-        const isHover = enabled && hoverId === o.id && !isActive;
+        const isHover = enabled && effectiveHoverId === o.id && !isActive;
         const isHighlighted = isActive || isHover;
         const baseAnchor = computeLabelAnchor(o.points);
         const off = labelOffsets?.[o.entityId];
@@ -96,11 +104,17 @@ export function OverlayLayer({
         return (
           <g
             key={o.id}
-            className={enabled ? "pointer-events-auto" : "pointer-events-none"}
-            style={{ cursor: enabled && onPick ? "pointer" : "default" }}
-            onClick={() => enabled && onPick?.(o)}
-            onPointerEnter={() => enabled && setHoverId(o.id)}
-            onPointerLeave={() => setHoverId((h) => (h === o.id ? null : h))}
+            className={
+              enabled && interactive ? "pointer-events-auto" : "pointer-events-none"
+            }
+            style={{
+              cursor: enabled && interactive && onPick ? "pointer" : "default",
+            }}
+            onClick={() => enabled && interactive && onPick?.(o)}
+            onPointerEnter={() => enabled && interactive && setHoverId(o.id)}
+            onPointerLeave={() =>
+              interactive && setHoverId((h) => (h === o.id ? null : h))
+            }
           >
             {/* Hitbox + active flat fill — same path, fade-in opacity on activation */}
             <path

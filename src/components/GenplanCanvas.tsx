@@ -62,6 +62,9 @@ interface GenplanCanvasProps {
   sectionOffsets?: Record<number, [number, number]>;
   /** Shift POI chips (light) vertically in viewBox px. */
   poiOffsetY?: number;
+  /** Static-overlay mode: highlight stays purely visual, no hover/click on
+   * the polygon. Used by ApartmentScreen's in-card genplan preview. */
+  staticOverlay?: boolean;
 }
 
 /**
@@ -80,6 +83,7 @@ export function GenplanCanvas({
   sectionsOffsetY = 0,
   sectionOffsets,
   poiOffsetY = 0,
+  staticOverlay = false,
 }: GenplanCanvasProps) {
   const house = getHouse();
   const { overlays, loading } = useOverlays("genplan", "");
@@ -92,6 +96,15 @@ export function GenplanCanvas({
   const visibleSections = SECTION_NUMBERS.filter((n) =>
     isSectionVisible ? isSectionVisible(n) : true,
   );
+
+  // Map activeSection (entity number) → the overlay row's database id so the
+  // polygon itself paints in the «active» (filled blue) state, not just the
+  // chip. Without this the SVG overlay stayed in its idle state even when the
+  // chip was scaled up.
+  const activeOverlayId =
+    activeSection == null
+      ? null
+      : (overlays.find((o) => Number(o.entityId) === activeSection)?.id ?? null);
 
   // When showOverlays — the OverlayLayer renders its own chips. Static markers
   // serve as fallback ONLY if admin hasn't drawn anything. When showOverlays is
@@ -112,7 +125,8 @@ export function GenplanCanvas({
       {showOverlays && (
         <OverlayLayer
           scope="genplan"
-          highlightId={null /* highlight handled at chip level instead */}
+          highlightId={activeOverlayId}
+          interactive={!staticOverlay}
           isVisible={(o) => {
             const n = Number(o.entityId);
             return Number.isNaN(n) ? true : visibleSections.includes(n);
