@@ -926,7 +926,10 @@ function Construction() {
 
   const entry = entries[Math.min(monthIdx, entries.length - 1)] ?? entries[0];
   const photos = entry?.photos ?? [];
+  // First photo is the (usually vertical) cover — used as the full-height hero
+  // only; the horizontal lightbox gallery shows the remaining shots.
   const hero = photos[0];
+  const galleryPhotos = photos.slice(1);
 
   return (
     <section
@@ -1012,7 +1015,7 @@ function Construction() {
 
       {/* Bottom «Смотреть галерею» — same height as the fixed «Меню» bar (h-14),
           starting where that 420px bar ends so it reads as its continuation. */}
-      {photos.length > 0 && (
+      {galleryPhotos.length > 0 && (
         <Pressable
           onClick={() => setLightbox(0)}
           rippleColor="rgba(255,255,255,0.2)"
@@ -1023,9 +1026,9 @@ function Construction() {
         </Pressable>
       )}
 
-      {lightbox !== null && photos.length > 0 && (
+      {lightbox !== null && galleryPhotos.length > 0 && (
         <ConstructionLightbox
-          photos={photos}
+          photos={galleryPhotos}
           index={lightbox}
           setIndex={setLightbox}
           onClose={() => setLightbox(null)}
