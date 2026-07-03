@@ -39,7 +39,7 @@ const POI_LABELS: POI[] = [
   { icon: "left", label: "Парк «Берёзовая роща»", meta: "10 мин", pos: { x: 220, y: 870 } },
   { label: "ТЦ «Авиапарк»", meta: "5 мин", pos: { x: 730, y: 985 } },
   { label: "м. ЦСКА", meta: "15 мин", pos: { x: 1200, y: 1005 } },
-  { icon: "right", label: "ул. Викторенко", pos: { x: 1740, y: 650 } },
+  { icon: "right", label: "ул. Викторенко", pos: { x: 1480, y: 815 } },
   { label: "ул. 3-я Песчаная", pos: { x: 1080, y: 870 } },
 ];
 

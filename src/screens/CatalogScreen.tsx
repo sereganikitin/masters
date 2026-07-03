@@ -5,6 +5,7 @@ import { Reveal } from "@/components/Reveal";
 import { PlanImage } from "@/components/PlanImage";
 import { RangeSlider } from "@/components/RangeSlider";
 import { CloseButton } from "@/components/CloseButton";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   getHouse,
   formatArea,
@@ -14,6 +15,12 @@ import {
 } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
+
+// Flat promo discount applied to every lot. The lot's `price` in the feed is
+// the CURRENT (discounted) price; the struck-through "old" price is derived by
+// grossing it back up. Change this single constant to adjust the promo.
+const DISCOUNT_RATE = 0.1;
+const oldPrice = (price: number) => Math.round(price / (1 - DISCOUNT_RATE));
 
 type SortKey =
   | "price-asc"
@@ -36,8 +43,6 @@ interface Filters {
   maxFloor: number;
   excludeFirstFloor: boolean;
   excludeLastFloor: boolean;
-  /** Selected decoration chip keys (multi-select). */
-  decoration: Set<string>;
   /** Stand-in for «Со скидкой»; no data backing yet, kept as a no-op chip. */
   discount: boolean;
   perks: Set<PerkKey>;
@@ -58,7 +63,6 @@ function getDefaultFilters(all: Apartment[]): Filters {
     maxFloor: Math.max(...floors),
     excludeFirstFloor: false,
     excludeLastFloor: false,
-    decoration: new Set(),
     discount: false,
     perks: new Set(),
   };
@@ -72,15 +76,6 @@ function sectionTopFloors(): Record<number, number> {
   });
   return map;
 }
-
-// Decoration chip catalogue. Each chip matches one or more strings in the live
-// `apartment.decoration` field; chips with no matches still render so the UI
-// is forward-compatible with future feed data.
-const DECORATION_CHIPS: { key: string; label: string; match: RegExp }[] = [
-  { key: "white-box", label: "White Box", match: /white\s*box/i },
-  { key: "raw", label: "Без отделки", match: /без отделки/i },
-  { key: "pre-clean", label: "Предчистовая отделка", match: /предчистов/i },
-];
 
 const PERK_LABELS: Record<PerkKey, string> = {
   cornerGlazing: "Угловое остекление",
@@ -157,12 +152,6 @@ export function CatalogScreen() {
       if (filters.excludeFirstFloor && a.floor === 1) return false;
       if (filters.excludeLastFloor && a.floor === topFloors[a.sectionNumber])
         return false;
-      if (filters.decoration.size > 0) {
-        const matches = DECORATION_CHIPS.filter((c) =>
-          filters.decoration.has(c.key),
-        ).some((c) => c.match.test(a.decoration ?? ""));
-        if (!matches) return false;
-      }
       if (filters.perks.has("cornerGlazing") && !a.features.cornerGlazing) return false;
       if (
         filters.perks.has("largeKitchenLivingRoom") &&
@@ -263,24 +252,6 @@ export function CatalogScreen() {
               active={filters.discount}
               onClick={() => setFilters((f) => ({ ...f, discount: !f.discount }))}
             />
-            {DECORATION_CHIPS.map((c) => {
-              const active = filters.decoration.has(c.key);
-              return (
-                <QuickChip
-                  key={c.key}
-                  active={active}
-                  onClick={() =>
-                    setFilters((f) => {
-                      const next = new Set(f.decoration);
-                      active ? next.delete(c.key) : next.add(c.key);
-                      return { ...f, decoration: next };
-                    })
-                  }
-                >
-                  {c.label}
-                </QuickChip>
-              );
-            })}
             <QuickChip
               active={filters.perks.has("masterBedroom")}
               onClick={() =>
@@ -371,11 +342,14 @@ export function CatalogScreen() {
             </div>
           )}
         </main>
+
+        <SiteFooter pad="px-12" />
       </div>
 
       {drawerOpen && (
         <AllFiltersDrawer
           filters={filters}
+          bounds={bounds}
           sections={house.sections.map((s) => s.number)}
           setFilters={setFilters}
           onClose={() => setDrawerOpen(false)}
@@ -391,11 +365,13 @@ export function CatalogScreen() {
 
 function AllFiltersDrawer({
   filters,
+  bounds,
   sections,
   setFilters,
   onClose,
 }: {
   filters: Filters;
+  bounds: Filters;
   sections: number[];
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   onClose: () => void;
@@ -420,6 +396,112 @@ function AllFiltersDrawer({
           className="min-h-0 flex-1 space-y-8 overflow-y-auto p-8"
           style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
         >
+          <DrawerGroup title="Количество комнат">
+            <div className="grid grid-cols-4 gap-2">
+              {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
+                const active = filters.room.has(rt.key);
+                return (
+                  <Pressable
+                    key={rt.key}
+                    onClick={() =>
+                      setFilters((f) => {
+                        const next = new Set(f.room);
+                        active ? next.delete(rt.key) : next.add(rt.key);
+                        return { ...f, room: next };
+                      })
+                    }
+                    rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
+                    className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
+                      active
+                        ? "bg-night-500 text-base-0"
+                        : "border border-base-600 bg-base-0 text-base-800"
+                    }`}
+                  >
+                    {rt.label}
+                  </Pressable>
+                );
+              })}
+            </div>
+          </DrawerGroup>
+
+          <DrawerGroup title="Стоимость, млн ₽">
+            <div className="border border-base-600 px-5 py-3">
+              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                <span>{formatPrice(filters.minPrice)}</span>
+                <span>{formatPrice(filters.maxPrice)}</span>
+              </div>
+              <RangeSlider
+                hideValues
+                min={bounds.minPrice}
+                max={bounds.maxPrice}
+                step={100_000}
+                value={[filters.minPrice, filters.maxPrice]}
+                format={(v) => (v / 1_000_000).toFixed(1).replace(".", ",")}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minPrice: lo, maxPrice: hi }))
+                }
+              />
+            </div>
+          </DrawerGroup>
+
+          <DrawerGroup title="Площадь, м²">
+            <div className="border border-base-600 px-5 py-3">
+              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                <span>от {formatArea(filters.minArea)}</span>
+                <span>до {formatArea(filters.maxArea)}</span>
+              </div>
+              <RangeSlider
+                hideValues
+                min={bounds.minArea}
+                max={bounds.maxArea}
+                step={1}
+                value={[filters.minArea, filters.maxArea]}
+                format={(v) => formatArea(v)}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
+                }
+              />
+            </div>
+          </DrawerGroup>
+
+          <DrawerGroup title="Этаж">
+            <div className="border border-base-600 px-5 py-3">
+              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                <span>от {filters.minFloor}</span>
+                <span>до {filters.maxFloor}</span>
+              </div>
+              <RangeSlider
+                hideValues
+                min={bounds.minFloor}
+                max={bounds.maxFloor}
+                step={1}
+                value={[filters.minFloor, filters.maxFloor]}
+                format={(v) => String(v)}
+                onChange={([lo, hi]) =>
+                  setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
+                }
+              />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <QuickChip
+                active={filters.excludeFirstFloor}
+                onClick={() =>
+                  setFilters((f) => ({ ...f, excludeFirstFloor: !f.excludeFirstFloor }))
+                }
+              >
+                Не первый
+              </QuickChip>
+              <QuickChip
+                active={filters.excludeLastFloor}
+                onClick={() =>
+                  setFilters((f) => ({ ...f, excludeLastFloor: !f.excludeLastFloor }))
+                }
+              >
+                Не последний
+              </QuickChip>
+            </div>
+          </DrawerGroup>
+
           <DrawerGroup title="Секция">
             <div className="flex flex-wrap gap-2">
               {sections.map((n) => {
@@ -886,21 +968,6 @@ function buildActiveChips(
     });
   }
 
-  filters.decoration.forEach((dKey) => {
-    const chip = DECORATION_CHIPS.find((c) => c.key === dKey);
-    if (!chip) return;
-    chips.push({
-      key: `decoration:${dKey}`,
-      label: chip.label,
-      remove: () =>
-        setFilters((f) => {
-          const next = new Set(f.decoration);
-          next.delete(dKey);
-          return { ...f, decoration: next };
-        }),
-    });
-  });
-
   if (filters.discount) {
     chips.push({
       key: "discount",
@@ -931,7 +998,6 @@ function buildActiveChips(
 
 function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }) {
   const tags: string[] = [];
-  if (apt.decoration) tags.push(apt.decoration);
   if (apt.features.largeKitchenLivingRoom) tags.push("Кухня-гостиная");
   if (apt.features.masterBedroom) tags.push("Мастер-спальня");
   if (apt.features.cornerGlazing) tags.push("Угловое остекление");
@@ -981,8 +1047,16 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
         {roomTypeLabel(apt.roomType)} · {formatArea(apt.area)}
       </div>
 
-      <div className="mt-1 font-display text-[28px] font-semibold leading-none tracking-tight text-base-800">
-        {formatPrice(apt.price)}
+      <div className="mt-1 flex items-baseline gap-3">
+        <span className="font-display text-[28px] font-semibold leading-none tracking-tight text-base-800">
+          {formatPrice(apt.price)}
+        </span>
+        <span className="bg-accent px-1.5 py-0.5 font-sans text-[12px] font-semibold text-base-0">
+          −{Math.round(DISCOUNT_RATE * 100)}%
+        </span>
+      </div>
+      <div className="mt-1 font-sans text-small font-medium text-base-500 line-through">
+        {formatPrice(oldPrice(apt.price))}
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-y-1.5 border-t border-base-200 pt-4 font-sans text-small">

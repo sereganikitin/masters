@@ -17,7 +17,6 @@ const ITEMS: MenuItem[] = [
   // Placeholder section, kept in code so it can be re-enabled when ready.
   { id: "buying", label: "Способы покупки", hidden: true },
   { id: "office", label: "Офис продаж" },
-  { id: "documents", label: "Документы" },
 ];
 
 /**

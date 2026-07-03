@@ -100,7 +100,7 @@ export const ABOUT_HERO_DEFAULTS: AboutHeroContent = {
   title: "Премиальный дом\nМАСТЕРС",
   metaRows: [
     { label: "Класс жилья", value: "Премиум" },
-    { label: "Срок сдачи", value: "IV кв. 2029 г.", dim: true },
+    { label: "Срок сдачи", value: "IV кв. 2029 г." },
     { label: "Адрес", value: "г. Москва, ул. Викторенко, 16" },
     {
       label: "О проекте",
@@ -109,14 +109,9 @@ export const ABOUT_HERO_DEFAULTS: AboutHeroContent = {
     },
   ],
   photo: "/images/hero-genplan.png",
-  ctaTiles: [
-    {
-      title: "Сайт проекта",
-      sub: "Перейти на сайт",
-      url: "https://cg-projects.ru/projects/masters",
-      icon: "arrow",
-    },
-  ],
+  // «Сайт проекта» tile removed — this IS the project site; the old tile linked
+  // out to the cg-projects aggregator. Left empty so no CTA tile renders.
+  ctaTiles: [],
 };
 
 export const ABOUT_TOUR_DEFAULTS: AboutTourContent = {

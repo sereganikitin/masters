@@ -33,7 +33,7 @@ const DEFAULTS: AboutHeroContent = {
   title: "Премиальный\nдом МАСТЕРС",
   metaRows: [
     { label: "Класс жилья", value: "Премиум" },
-    { label: "Срок сдачи", value: "IV кв. 2029 г.", dim: true },
+    { label: "Срок сдачи", value: "IV кв. 2029 г." },
     { label: "Адрес", value: "г. Москва, ул. Викторенко, 16" },
     {
       label: "О проекте",

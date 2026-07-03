@@ -5,6 +5,7 @@ import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
 import { GenplanCanvas } from "@/components/GenplanCanvas";
 import { AboutMenu } from "@/components/AboutMenu";
+import { SiteFooter } from "@/components/SiteFooter";
 import { getHouse, formatArea, formatPrice, ROOM_TYPES } from "@/data/complex";
 import { apartmentPlanUrl } from "@/lib/plans";
 import type { Apartment, RoomType } from "@/data/types";
@@ -14,7 +15,6 @@ import { useContent } from "@/lib/useContent";
 import { specialFormatsApi, type SpecialFormat } from "@/lib/cms";
 import {
   ABOUT_CONSTRUCTION_DEFAULTS,
-  ABOUT_DOCUMENTS_DEFAULTS,
   ABOUT_ENGINEERING_DEFAULTS,
   ABOUT_HERO_DEFAULTS,
   ABOUT_OFFICE_DEFAULTS,
@@ -48,8 +48,7 @@ export function AboutScreen() {
         <Engineering />
         <Construction />
         <Office />
-        <Documents />
-        <PageFooter />
+        <SiteFooter pad={PAGE_PAD} />
       </div>
 
       <AboutMenu />
@@ -99,14 +98,7 @@ function PageHeader() {
       className={`flex items-center justify-between border-b border-base-200 bg-base-0 ${PAGE_PAD} py-6`}
     >
       <button onClick={() => nav("/")} className="flex items-center gap-3">
-        <div className="grid h-9 w-9 place-items-center bg-base-800 text-base-0">
-          <span className="font-display text-[14px] font-bold leading-none">
-            {header.brandLine}
-          </span>
-        </div>
-        <span className="font-display text-[14px] font-medium uppercase tracking-[0.25em] text-base-800">
-          {header.brand}
-        </span>
+        <img src="/images/logo.svg" alt="Capital Group" className="h-8 w-auto" />
       </button>
 
       <nav className="flex items-center gap-12 font-sans text-body font-medium text-base-800">
@@ -477,22 +469,6 @@ function SpecialFormats() {
                   <p className="font-sans text-body leading-relaxed text-base-700">
                     {it.body}
                   </p>
-                  {it.detailsUrl ? (
-                    <a
-                      href={it.detailsUrl}
-                      target={it.detailsUrl.startsWith("/") ? undefined : "_blank"}
-                      rel="noopener noreferrer"
-                      className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60"
-                    >
-                      <span className="border-b border-base-800 pb-0.5">Подробнее</span>
-                      <IconArrowRight size={16} />
-                    </a>
-                  ) : (
-                    <button className="mt-6 flex items-center gap-2 self-start font-sans text-body font-medium text-base-800 transition-opacity hover:opacity-60">
-                      <span className="border-b border-base-800 pb-0.5">Подробнее</span>
-                      <IconArrowRight size={16} />
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -569,6 +545,7 @@ function Layouts() {
   const firstAvailable = ROOM_TYPES.find((rt) => (roomCounts[rt.key] ?? 0) > 0);
   const [room, setRoom] = useState<RoomType>(firstAvailable?.key ?? "1");
   const [index, setIndex] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
 
   // All apartments of the selected room type. The carousel cycles through them.
   const matching = useMemo(
@@ -649,8 +626,10 @@ function Layouts() {
 
               <button
                 type="button"
-                className="grid h-10 w-10 place-items-center border border-base-200 text-base-800 transition-colors hover:bg-base-100"
-                aria-label="Развернуть"
+                onClick={() => sample && setFullscreen(true)}
+                disabled={!sample}
+                className="grid h-10 w-10 place-items-center border border-base-200 text-base-800 transition-colors hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Развернуть на весь экран"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
                   <path d="M2 5V2h3M12 5V2H9M2 9v3h3M12 9v3H9" />
@@ -791,6 +770,59 @@ function Layouts() {
           </div>
         </div>
       </Reveal>
+
+      {/* Fullscreen plan viewer */}
+      {fullscreen && sample && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-base-0">
+          <div className="flex items-center justify-between border-b border-base-200 px-10 py-6">
+            <div className="font-display text-[18px] font-semibold uppercase tracking-[0.02em] text-base-800">
+              {headingMap[room]} · №{sample.number}
+            </div>
+            <CloseButton onClick={() => setFullscreen(false)} size={44} />
+          </div>
+
+          <div className="relative flex flex-1 items-center justify-center px-16 py-10">
+            <button
+              type="button"
+              onClick={prev}
+              disabled={total < 2}
+              className="absolute left-8 grid h-14 w-14 place-items-center text-base-600 transition-colors hover:text-base-800 disabled:opacity-30"
+              aria-label="Предыдущая планировка"
+            >
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 1L3 7l6 6" />
+              </svg>
+            </button>
+
+            <PlanImage
+              src={apartmentPlanUrl(sample)}
+              alt={`Планировка квартиры №${sample.number}`}
+              className="h-full w-full object-contain"
+              fallback={
+                <div className="grid h-full w-full place-items-center font-sans text-body text-base-300">
+                  Планировка №{sample.number}
+                </div>
+              }
+            />
+
+            <button
+              type="button"
+              onClick={next}
+              disabled={total < 2}
+              className="absolute right-8 grid h-14 w-14 place-items-center text-base-600 transition-colors hover:text-base-800 disabled:opacity-30"
+              aria-label="Следующая планировка"
+            >
+              <svg width="18" height="18" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 1l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+
+          <p className="pb-8 text-center font-sans text-small text-base-600">
+            {total > 0 ? `${index + 1} из ${total}` : "—"}
+          </p>
+        </div>
+      )}
     </section>
   );
 }
@@ -819,16 +851,6 @@ function pluralize(n: number, forms: [string, string, string]): string {
 function Engineering() {
   const c = useContent("about.engineering", ABOUT_ENGINEERING_DEFAULTS);
   const headingLines = c.heading.split("\n");
-  const handleCta = () => {
-    if (!c.ctaUrl) return;
-    if (c.ctaUrl.startsWith("tel:") || c.ctaUrl.startsWith("mailto:")) {
-      window.location.href = c.ctaUrl;
-    } else if (c.ctaUrl.startsWith("/")) {
-      window.location.href = c.ctaUrl;
-    } else {
-      window.open(c.ctaUrl, "_blank", "noopener,noreferrer");
-    }
-  };
   return (
     <section id="engineering" className="relative w-full bg-night-500 text-base-0">
       <div className={`grid grid-cols-[1.4fr_1fr] gap-16 ${PAGE_PAD} py-24`}>
@@ -871,17 +893,6 @@ function Engineering() {
                 />
               )}
             </div>
-          </Reveal>
-
-          <Reveal mode="up" delay={300}>
-            <Pressable
-              onClick={handleCta}
-              rippleColor="rgba(255,255,255,0.18)"
-              className="flex h-14 w-full items-center justify-between bg-base-0/[0.07] px-6 font-sans text-body font-medium text-base-0 transition-colors hover:bg-base-0/[0.12]"
-            >
-              {c.ctaLabel}
-              <IconArrowRight size={18} />
-            </Pressable>
           </Reveal>
         </div>
       </div>
@@ -998,10 +1009,6 @@ function SelectChip({ label }: { label: string }) {
 function Office() {
   const c = useContent("about.office", ABOUT_OFFICE_DEFAULTS);
   const titleLines = c.title.split("\n");
-  const handleRoute = () => {
-    if (!c.routeUrl) return;
-    window.open(c.routeUrl, "_blank", "noopener,noreferrer");
-  };
   // Live Yandex map widget — no API key needed for this iframe endpoint.
   // Falls back to the static mapImage if coords are missing.
   const hasCoords = Number.isFinite(c.mapLat) && Number.isFinite(c.mapLng);
@@ -1083,15 +1090,6 @@ function Office() {
               <p className="mt-7 font-sans text-small text-base-0/65">{c.address}</p>
               <p className="font-sans text-small text-base-0/65">{c.phone}</p>
             </div>
-
-            <Pressable
-              onClick={handleRoute}
-              rippleColor="rgba(255,255,255,0.18)"
-              className="flex h-14 w-full items-center justify-between bg-base-0/[0.07] px-8 font-sans text-body font-medium text-base-0 transition-colors hover:bg-base-0/[0.12]"
-            >
-              {c.ctaLabel}
-              <IconArrowRight size={18} />
-            </Pressable>
           </div>
         </Reveal>
       </div>
@@ -1099,101 +1097,3 @@ function Office() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 10. Документация — короткая секция в две колонки
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Documents() {
-  const c = useContent("about.documents", ABOUT_DOCUMENTS_DEFAULTS);
-  return (
-    <section id="documents" className={`${PAGE_PAD} py-24`}>
-      <div className="grid grid-cols-[280px_1fr_280px] items-start gap-12">
-        <Reveal mode="up">
-          <p className="flex items-center gap-3 font-display text-upper font-extrabold uppercase tracking-[-0.02em] text-base-800">
-            <span className="inline-block h-2.5 w-2.5 bg-base-800" />
-            {c.eyebrow}
-          </p>
-        </Reveal>
-
-        <Reveal mode="up" delay={120}>
-          <div className="mx-auto max-w-[640px]">
-            <div className="font-sans text-body leading-relaxed text-base-800">
-              <div className="float-left mr-5 mt-1 grid h-[90px] w-[90px] place-items-center overflow-hidden bg-base-100">
-                {c.logo ? (
-                  <img src={c.logo} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <svg
-                    viewBox="0 0 56 56"
-                    className="h-12 w-12 text-base-800"
-                    fill="currentColor"
-                    aria-hidden
-                  >
-                    <rect x="6" y="14" width="44" height="2" />
-                    <rect x="9" y="18" width="3" height="18" />
-                    <rect x="16" y="18" width="3" height="18" />
-                    <rect x="23" y="18" width="3" height="18" />
-                    <rect x="30" y="18" width="3" height="18" />
-                    <rect x="37" y="18" width="3" height="18" />
-                    <rect x="44" y="18" width="3" height="18" />
-                    <rect x="6" y="38" width="44" height="2" />
-                    <text
-                      x="28"
-                      y="50"
-                      textAnchor="middle"
-                      fontSize="8"
-                      fontWeight="700"
-                      fontFamily="inherit"
-                    >
-                      ДОМ.РФ
-                    </text>
-                  </svg>
-                )}
-              </div>
-              <p>{c.body}</p>
-            </div>
-
-            <div className="mt-12 flex justify-center">
-              <a
-                href={c.docsUrl || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-14 items-center gap-5 bg-night-500 px-7 font-sans text-body font-medium text-base-0 transition-colors hover:bg-night-400"
-              >
-                {c.ctaLabel}
-                <span className="h-px w-5 bg-base-0/40" />
-                <IconArrowRight size={18} />
-              </a>
-            </div>
-          </div>
-        </Reveal>
-
-        <div />
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Footer
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PageFooter() {
-  return (
-    <footer className={`border-t border-base-200 bg-night-500 ${PAGE_PAD} py-12 text-base-0/55`}>
-      <div className="flex items-center justify-between font-sans text-small">
-        <div className="flex items-center gap-6">
-          <span>© Capital Group · {new Date().getFullYear()}</span>
-          <span className="h-1 w-1 rounded-full bg-base-0/30" />
-          <a
-            href="https://cg-projects.ru"
-            onClick={(e) => e.preventDefault()}
-            className="hover:text-base-0"
-          >
-            cg-projects.ru
-          </a>
-        </div>
-        <span>ЖК МАСТЕРС · Capital Group</span>
-      </div>
-    </footer>
-  );
-}

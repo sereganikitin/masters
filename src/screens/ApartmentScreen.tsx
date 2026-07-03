@@ -15,20 +15,7 @@ import {
   roomTypeLabel,
 } from "@/data/complex";
 import { apartmentPlanUrl, floorPlanUrl } from "@/lib/plans";
-import { IconArrowRight, IconMap, IconHome } from "@/components/Icon";
 import type { Apartment } from "@/data/types";
-
-// Subsidised-mortgage estimate per Figma. Standard kiosk assumption:
-// 6% annual rate, 20% down-payment, 20-year term (240 months).
-function monthlyMortgage(price: number): number {
-  const credit = price * 0.8;
-  const r = 0.06 / 12;
-  const n = 240;
-  const factor = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  return Math.round(credit * factor);
-}
-
-const RUB = (n: number) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
 
 type PlanTab = "plan" | "floor" | "genplan" | "views";
 
@@ -57,7 +44,6 @@ export function ApartmentScreen() {
 
   // Tags row — derived from feed flags.
   const tags: { label: string; tone?: "outline" }[] = [];
-  if (apt.decoration) tags.push({ label: apt.decoration, tone: "outline" });
   if (apt.features.largeKitchenLivingRoom)
     tags.push({ label: "Кухня-гостиная", tone: "outline" });
   if (apt.features.masterBedroom) tags.push({ label: "Мастер-спальня", tone: "outline" });
@@ -78,8 +64,6 @@ export function ApartmentScreen() {
     { key: "genplan", label: "Генплан" },
     { key: "views", label: "Вид из окон", disabled: true },
   ];
-
-  const monthly = monthlyMortgage(apt.price);
 
   return (
     <div className="relative h-full w-full bg-base-100">
@@ -168,8 +152,6 @@ export function ApartmentScreen() {
                 <dl className="mt-8 grid grid-cols-[140px_1fr] gap-y-2 font-sans text-small">
                   <dt className="text-base-0/55">Проект</dt>
                   <dd className="text-right font-medium text-base-0">МАСТЕРС</dd>
-                  <dt className="text-base-0/55">В ипотеку</dt>
-                  <dd className="text-right font-medium text-base-0">от {RUB(monthly)}/мес.</dd>
                   <dt className="text-base-0/55">Номер лота</dt>
                   <dd className="text-right font-medium text-base-0">{apt.number}</dd>
                   <dt className="text-base-0/55">Цена за м²</dt>
@@ -207,37 +189,6 @@ export function ApartmentScreen() {
                 </div>
               </Reveal>
 
-              {/* Booking CTA */}
-              <Reveal mode="up" delay={360}>
-                <Pressable
-                  rippleColor="rgba(255,255,255,0.25)"
-                  className="mt-8 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
-                >
-                  Забронировать
-                  <IconArrowRight size={18} />
-                </Pressable>
-              </Reveal>
-
-              {/* Sub-offers — storage / parking / mortgage calc */}
-              <Reveal mode="up" delay={420}>
-                <div className="mt-8 grid grid-cols-3 gap-3">
-                  <OfferCard
-                    icon={<IconMap size={18} />}
-                    title="Машино-место"
-                    note="от 1,7 млн ₽"
-                  />
-                  <OfferCard
-                    icon={<IconHome size={18} />}
-                    title="Кладовая"
-                    note="от 800 тыс ₽"
-                  />
-                  <OfferCard
-                    icon={<IconArrowRight size={18} />}
-                    title="Ипотека"
-                    note={`от ${RUB(monthly)}/мес.`}
-                  />
-                </div>
-              </Reveal>
             </div>
           </div>
         </Reveal>
@@ -368,25 +319,3 @@ function GenplanView({ apt }: { apt: Apartment }) {
   );
 }
 
-function OfferCard({
-  icon,
-  title,
-  note,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  note: string;
-}) {
-  return (
-    <Pressable
-      rippleColor="rgba(255,255,255,0.18)"
-      className="flex aspect-[3/4] w-full flex-col items-start justify-between bg-base-0/[0.04] p-4 text-left text-base-0"
-    >
-      <div className="rounded-full bg-base-0/10 p-2">{icon}</div>
-      <div>
-        <p className="font-display text-[14px] font-semibold leading-tight">{title}</p>
-        <p className="mt-1 font-sans text-[12px] text-base-0/55">{note}</p>
-      </div>
-    </Pressable>
-  );
-}

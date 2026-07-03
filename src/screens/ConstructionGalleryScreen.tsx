@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Reveal } from "@/components/Reveal";
 import { IconArrowRight, IconPlay } from "@/components/Icon";
 import { CloseButton } from "@/components/CloseButton";
+import { SiteFooter } from "@/components/SiteFooter";
 import { constructionApi, type ConstructionEntry } from "@/lib/cms";
 
 const MONTHS = [
@@ -91,6 +92,8 @@ export function ConstructionGalleryScreen() {
             </div>
           )}
         </div>
+
+        <SiteFooter />
       </div>
     </div>
   );

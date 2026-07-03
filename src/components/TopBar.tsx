@@ -16,16 +16,11 @@ export function TopBar({ variant = "light" }: TopBarProps) {
       }`}
     >
       <button onClick={() => nav("/")} className="flex items-center gap-3">
-        <div
-          className={`grid h-8 w-8 place-items-center rounded-sm ${
-            isDark ? "bg-base-0 text-base-800" : "bg-base-800 text-base-0"
-          }`}
-        >
-          <span className="font-display text-[18px] font-bold leading-none">M</span>
-        </div>
-        <span className="font-display text-[14px] font-medium uppercase tracking-[0.2em]">
-          Capital Group
-        </span>
+        <img
+          src="/images/logo.svg"
+          alt="Capital Group"
+          className={`h-7 w-auto ${isDark ? "brightness-0 invert" : ""}`}
+        />
       </button>
 
       <nav className="flex items-center gap-10">
