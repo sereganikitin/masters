@@ -1,0 +1,47 @@
+name: Import construction dynamics (daily)
+
+# Scrapes the "Динамика строительства" widget on cg-projects.ru once a day and
+# adds any NEW month to our site via the admin API. Idempotent by (year, month):
+# months already present (auto-imported earlier or added by hand) are skipped,
+# so this never overwrites manual edits. Browser runs on the runner; only the
+# finished entries are pushed to prod over HTTPS.
+#
+# Required repo secrets:
+#   PROD_BASE_URL   e.g. https://masters.infoseledka.ru
+#   ADMIN_TOKEN     prod admin bearer token (same as the server's ADMIN_TOKEN)
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC → 08:00 MSK, daily
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Scrape and log only, don't write (1 = dry run)"
+        required: false
+        default: "0"
+
+concurrency:
+  group: import-progress
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install project deps + puppeteer (bundled Chrome)
+        run: |
+          npm ci
+          npm install puppeteer@23 --no-save
+
+      - name: Import new months
+        env:
+          PROD_BASE_URL: ${{ secrets.PROD_BASE_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: node scripts/import-progress.mjs

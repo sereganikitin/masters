@@ -12,9 +12,14 @@ import type { Apartment, RoomType } from "@/data/types";
 import { IconArrowRight, IconPlay } from "@/components/Icon";
 import { CloseButton } from "@/components/CloseButton";
 import { useContent } from "@/lib/useContent";
-import { specialFormatsApi, type SpecialFormat } from "@/lib/cms";
 import {
-  ABOUT_CONSTRUCTION_DEFAULTS,
+  specialFormatsApi,
+  constructionApi,
+  type SpecialFormat,
+  type ConstructionEntry,
+} from "@/lib/cms";
+import { withConstructionFallback, monthLabel } from "@/lib/construction";
+import {
   ABOUT_ENGINEERING_DEFAULTS,
   ABOUT_HERO_DEFAULTS,
   ABOUT_OFFICE_DEFAULTS,
@@ -901,102 +906,189 @@ function Engineering() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8. Динамика строительства
+// 8. Динамика строительства — full-viewport section, month picker + lightbox
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Construction() {
-  const nav = useNavigate();
-  const c = useContent("about.construction", ABOUT_CONSTRUCTION_DEFAULTS);
-  const handleGallery = () => {
-    if (c.galleryUrl) {
-      if (c.galleryUrl.startsWith("/")) nav(c.galleryUrl);
-      else window.open(c.galleryUrl, "_blank", "noopener,noreferrer");
-    } else {
-      nav("/about/construction-gallery");
-    }
-  };
+  // Driven by the monthly progress entries (DB + seeded fallback). Newest first.
+  const [entries, setEntries] = useState<ConstructionEntry[]>(() =>
+    withConstructionFallback([]),
+  );
+  const [monthIdx, setMonthIdx] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  useEffect(() => {
+    constructionApi
+      .list()
+      .then((list) => setEntries(withConstructionFallback(list)))
+      .catch(() => {});
+  }, []);
+
+  const entry = entries[Math.min(monthIdx, entries.length - 1)] ?? entries[0];
+  const photos = entry?.photos ?? [];
+  const hero = photos[0];
+
   return (
-    <section id="construction" className="relative w-full bg-base-0">
-      <div className="grid grid-cols-[1fr_2fr_1.6fr]">
-        <div className="flex items-center pl-20">
-          <Reveal mode="up">
-            <p className="font-sans text-body text-base-600">Общий статус</p>
-          </Reveal>
+    <section
+      id="construction"
+      className="relative h-screen min-h-[720px] w-full overflow-hidden bg-base-0"
+    >
+      {/* Right — full-height hero photo */}
+      <div className="absolute inset-y-0 right-0 w-[46%] bg-base-100">
+        {hero && (
+          <img src={hero} alt="" className="h-full w-full object-cover" />
+        )}
+      </div>
+
+      {/* Vertical guide line under the status column */}
+      <div className="absolute inset-y-0 left-[24%] w-px bg-base-200" />
+
+      {/* «Общий статус» with a horizontal guide line above it */}
+      <div className="absolute left-16 top-[54%] w-[calc(24%-8rem)]">
+        <div className="border-t border-base-200 pt-5">
+          <p className="font-sans text-body text-base-600">Общий статус</p>
         </div>
+      </div>
 
-        <div className="flex flex-col py-24 pr-12">
-          <Reveal mode="up">
-            <h2 className="font-display text-[36px] font-bold uppercase leading-[1.1] tracking-[-0.02em] text-base-800">
-              Динамика
-              <br />
-              строительства
-            </h2>
-          </Reveal>
+      {/* Center — heading, month picker, text */}
+      <div className="absolute inset-y-0 left-[24%] flex w-[30%] flex-col justify-center pb-24 pl-12 pr-8">
+        <Reveal mode="up">
+          <h2 className="font-display text-[40px] font-bold uppercase leading-[1.05] tracking-[-0.02em] text-base-800">
+            Динамика
+            <br />
+            строительства
+          </h2>
+        </Reveal>
 
-          <Reveal mode="up" delay={150}>
-            <div className="mt-8 flex gap-4">
-              <SelectChip label={c.building} />
-              <SelectChip label={c.period} />
-            </div>
-          </Reveal>
+        <Reveal mode="up" delay={120}>
+          <div className="relative mt-8 inline-flex w-[240px] items-center">
+            <select
+              value={monthIdx}
+              onChange={(e) => setMonthIdx(Number(e.target.value))}
+              className="h-14 w-full cursor-pointer appearance-none border border-base-300 bg-base-0 pl-5 pr-12 font-sans text-body font-medium text-base-800 outline-none transition-colors hover:border-base-400"
+            >
+              {entries.map((e, i) => (
+                <option key={`${e.year}-${e.month}`} value={i}>
+                  {monthLabel(e)}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="pointer-events-none absolute right-5 text-base-600"
+              width="12"
+              height="8"
+              viewBox="0 0 12 8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M1 1l5 5 5-5" />
+            </svg>
+          </div>
+        </Reveal>
 
-          <Reveal mode="up" delay={220}>
-            <div className="mt-10 max-w-[480px] border-t border-base-200" />
-          </Reveal>
-
-          <Reveal mode="up" delay={260}>
-            <p className="mt-8 max-w-[480px] font-sans text-body leading-relaxed text-base-800">
-              {c.intro}
+        <Reveal mode="up" delay={200}>
+          <div className="mt-10 border-t border-base-200" />
+          {entry?.body && (
+            <p className="mt-8 font-sans text-body leading-relaxed text-base-800">
+              {entry.body}
             </p>
-
-            <ul className="mt-6 max-w-[480px] space-y-3 font-sans text-body leading-relaxed text-base-700">
-              {c.bullets.map((b, i) => (
+          )}
+          {entry?.bullets?.length > 0 && (
+            <ul className="mt-5 space-y-3 font-sans text-body leading-relaxed text-base-700">
+              {entry.bullets.map((b, i) => (
                 <li key={i} className="flex gap-3">
                   <span className="mt-[9px] inline-block h-[5px] w-[5px] flex-shrink-0 rounded-full bg-base-800" />
                   <span>{b}</span>
                 </li>
               ))}
             </ul>
-          </Reveal>
-
-          <Reveal mode="up" delay={360}>
-            <Pressable
-              onClick={handleGallery}
-              rippleColor="rgba(255,255,255,0.2)"
-              className="mt-12 flex h-14 w-full items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
-            >
-              {c.galleryLabel}
-              <IconArrowRight size={18} />
-            </Pressable>
-          </Reveal>
-        </div>
-
-        <Reveal mode="right" delay={120}>
-          <div className="relative h-full min-h-[680px] w-full overflow-hidden bg-base-100">
-            {c.photo && (
-              <img
-                src={c.photo}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            )}
-          </div>
+          )}
         </Reveal>
       </div>
+
+      {/* Bottom «Смотреть галерею» — same height as the fixed «Меню» bar (h-14),
+          starting where that 420px bar ends so it reads as its continuation. */}
+      {photos.length > 0 && (
+        <Pressable
+          onClick={() => setLightbox(0)}
+          rippleColor="rgba(255,255,255,0.2)"
+          className="absolute bottom-0 left-[420px] flex h-14 w-[calc(54%-420px)] items-center justify-between bg-accent px-6 font-sans text-body font-medium text-base-0"
+        >
+          Смотреть галерею
+          <IconArrowRight size={18} />
+        </Pressable>
+      )}
+
+      {lightbox !== null && photos.length > 0 && (
+        <ConstructionLightbox
+          photos={photos}
+          index={lightbox}
+          setIndex={setLightbox}
+          onClose={() => setLightbox(null)}
+        />
+      )}
     </section>
   );
 }
 
-function SelectChip({ label }: { label: string }) {
-  // Visual-only placeholder. Real selects (корпус/месяц) will hook up later.
+function ConstructionLightbox({
+  photos,
+  index,
+  setIndex,
+  onClose,
+}: {
+  photos: string[];
+  index: number;
+  setIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const prev = () => setIndex((index - 1 + photos.length) % photos.length);
+  const next = () => setIndex((index + 1) % photos.length);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft") setIndex((index - 1 + photos.length) % photos.length);
+      else if (e.key === "ArrowRight") setIndex((index + 1) % photos.length);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, photos.length, onClose, setIndex]);
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black">
+      <img
+        src={photos[index]}
+        alt=""
+        className="max-h-full max-w-full object-contain"
+      />
+
+      <CloseButton onClick={onClose} size={52} className="absolute right-8 top-8 z-10" />
+
+      {photos.length > 1 && (
+        <div className="absolute bottom-8 right-8 flex gap-2">
+          <ArrowBtn dir="left" onClick={prev} />
+          <ArrowBtn dir="right" onClick={next} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArrowBtn({ dir, onClick }: { dir: "left" | "right"; onClick: () => void }) {
   return (
     <button
       type="button"
-      className="flex h-12 items-center gap-3 rounded-md bg-base-100 px-4 font-sans text-body font-medium text-base-800 transition-colors hover:bg-base-200"
+      onClick={onClick}
+      aria-label={dir === "left" ? "Предыдущее фото" : "Следующее фото"}
+      className="grid h-14 w-14 place-items-center border border-base-0/40 text-base-0 transition-colors hover:bg-base-0/10"
     >
-      {label}
-      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M1 1l4 4 4-4" />
+      <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+        {dir === "left" ? <path d="M9 1L3 7l6 6" /> : <path d="M5 1l6 6-6 6" />}
       </svg>
     </button>
   );
