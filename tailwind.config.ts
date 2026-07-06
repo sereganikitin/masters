@@ -28,8 +28,8 @@ export default {
         // 800 via the font-face declaration in index.css.
         display: ["'RF Dewi Expanded'", "'RF Dewi Extended'", "system-ui", "sans-serif"],
         displayExtended: ["'RF Dewi Extended'", "system-ui", "sans-serif"],
-        // Body text — Graphik LC Web (multiple weights available).
-        sans: ["'Graphik LC Web'", "system-ui", "sans-serif"],
+        // Body text — Graphik (same as reference site cg-projects.ru).
+        sans: ["'Graphik'", "system-ui", "sans-serif"],
       },
       fontSize: {
         h1: ["64px", { lineHeight: "1.1", letterSpacing: "-0.02em" }],

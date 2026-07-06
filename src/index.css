@@ -2,31 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Graphik LC Web — body text */
+/* Graphik — body text */
+/* Graphik — same font + weight mapping as the reference site cg-projects.ru
+ * (400 Regular, 500 Medium, 600 Bold, 700 Black), so the body text matches. */
 @font-face {
-  font-family: "Graphik LC Web";
-  src: url("/fonts/GraphikLCWeb-Regular.ttf") format("truetype");
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Graphik LC Web";
-  src: url("/fonts/GraphikLCWeb-Medium.ttf") format("truetype");
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Medium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Graphik LC Web";
-  src: url("/fonts/GraphikLCWeb-Semibold.ttf") format("truetype");
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Bold.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Graphik LC Web";
-  src: url("/fonts/GraphikLCWeb-Bold.ttf") format("truetype");
+  font-family: "Graphik";
+  src: url("/fonts/Graphik-Black.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -135,7 +137,7 @@
 
   body {
     margin: 0;
-    font-family: "Graphik LC Web", system-ui, sans-serif;
+    font-family: "Graphik", system-ui, sans-serif;
     color: theme("colors.base.800");
     background: theme("colors.base.0");
     -webkit-font-smoothing: antialiased;

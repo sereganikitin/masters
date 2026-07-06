@@ -93,6 +93,15 @@ export function CatalogScreen() {
   );
 
   const bounds = useMemo(() => getDefaultFilters(allApartments), [allApartments]);
+  // Only offer feature filters that actually have matching lots (e.g. hide
+  // «Угловое остекление» when no apartment has it).
+  const availablePerks = useMemo<PerkKey[]>(
+    () =>
+      (Object.keys(PERK_LABELS) as PerkKey[]).filter((k) =>
+        allApartments.some((a) => a.features[k]),
+      ),
+    [allApartments],
+  );
   const [filters, setFilters] = useState<Filters>(bounds);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -252,20 +261,22 @@ export function CatalogScreen() {
               active={filters.discount}
               onClick={() => setFilters((f) => ({ ...f, discount: !f.discount }))}
             />
-            <QuickChip
-              active={filters.perks.has("masterBedroom")}
-              onClick={() =>
-                setFilters((f) => {
-                  const next = new Set(f.perks);
-                  next.has("masterBedroom")
-                    ? next.delete("masterBedroom")
-                    : next.add("masterBedroom");
-                  return { ...f, perks: next };
-                })
-              }
-            >
-              Мастер-спальня
-            </QuickChip>
+            {availablePerks.includes("masterBedroom") && (
+              <QuickChip
+                active={filters.perks.has("masterBedroom")}
+                onClick={() =>
+                  setFilters((f) => {
+                    const next = new Set(f.perks);
+                    next.has("masterBedroom")
+                      ? next.delete("masterBedroom")
+                      : next.add("masterBedroom");
+                    return { ...f, perks: next };
+                  })
+                }
+              >
+                Мастер-спальня
+              </QuickChip>
+            )}
 
             <button
               type="button"
@@ -351,6 +362,7 @@ export function CatalogScreen() {
           filters={filters}
           bounds={bounds}
           sections={house.sections.map((s) => s.number)}
+          perkKeys={availablePerks}
           setFilters={setFilters}
           onClose={() => setDrawerOpen(false)}
         />
@@ -367,12 +379,14 @@ function AllFiltersDrawer({
   filters,
   bounds,
   sections,
+  perkKeys,
   setFilters,
   onClose,
 }: {
   filters: Filters;
   bounds: Filters;
   sections: number[];
+  perkKeys: PerkKey[];
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   onClose: () => void;
 }) {
@@ -525,9 +539,10 @@ function AllFiltersDrawer({
             </div>
           </DrawerGroup>
 
+          {perkKeys.length > 0 && (
           <DrawerGroup title="Особенности">
             <div className="flex flex-col gap-2">
-              {(Object.keys(PERK_LABELS) as PerkKey[]).map((k) => {
+              {perkKeys.map((k) => {
                 const active = filters.perks.has(k);
                 return (
                   <QuickChip
@@ -547,6 +562,7 @@ function AllFiltersDrawer({
               })}
             </div>
           </DrawerGroup>
+          )}
         </div>
 
         <footer className="border-t border-base-200 p-6">
