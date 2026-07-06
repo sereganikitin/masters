@@ -158,9 +158,10 @@ export const ABOUT_OFFICE_DEFAULTS: AboutOfficeContent = {
   phone: "+7 (495) 021-11-11",
   photo: "/images/about/office.png",
   mapImage: "/images/about/office-map.png",
-  // Exact coords for «Проезд Аэропорта, 8, стр. 2» — confirmed via Yandex Maps.
-  mapLat: 55.797296,
-  mapLng: 37.521792,
+  // Pin the map on the project itself (ЖК МАСТЕРС, ул. Викторенко, 16) — the
+  // visitor is already at the sales office, so the map should show the building.
+  mapLat: 55.79527,
+  mapLng: 37.52304,
   mapZoom: 17,
   ctaLabel: "Проложить маршрут",
   routeUrl: "https://yandex.ru/maps/?text=Москва Проезд Аэропорта 8",
