@@ -28,18 +28,34 @@ jobs:
   import:
     runs-on: ubuntu-latest
     steps:
+      # Skip cleanly (green, ~2s, no failure email) until the prod secrets are
+      # configured. Once PROD_BASE_URL + ADMIN_TOKEN are set, the job runs fully.
+      - name: Check secrets
+        id: pre
+        run: |
+          if [ -n "${{ secrets.PROD_BASE_URL }}" ] && [ -n "${{ secrets.ADMIN_TOKEN }}" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::PROD_BASE_URL / ADMIN_TOKEN not set — skipping import."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.pre.outputs.run == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.pre.outputs.run == 'true'
         with:
           node-version: 20
 
       - name: Install project deps + puppeteer (bundled Chrome)
+        if: steps.pre.outputs.run == 'true'
         run: |
           npm ci
           npm install puppeteer@23 --no-save
 
       - name: Import new months
+        if: steps.pre.outputs.run == 'true'
         env:
           PROD_BASE_URL: ${{ secrets.PROD_BASE_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
