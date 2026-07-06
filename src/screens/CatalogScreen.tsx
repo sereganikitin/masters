@@ -210,7 +210,7 @@ export function CatalogScreen() {
   })();
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
+    <div className="relative h-full w-full overflow-hidden bg-base-100 text-base-800">
       <CloseButton
         onClick={() => {
           if (window.history.length > 1) nav(-1);
@@ -309,7 +309,7 @@ export function CatalogScreen() {
         </header>
 
         {/* ───────────── Sort + count ───────────── */}
-        <div className="flex items-center justify-between border-y border-base-200 bg-base-100 px-12 py-5">
+        <div className="flex items-center justify-between px-12 py-5">
           <SortSelect value={sort} onChange={setSort} />
           <span className="font-sans text-body text-base-700">
             Найдено{" "}
@@ -341,9 +341,14 @@ export function CatalogScreen() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-5">
+            <div className="grid grid-cols-3 border-l border-t border-base-200 bg-base-0">
               {filtered.map((apt, i) => (
-                <Reveal key={apt.id} mode="up" delay={(i % 6) * 60} className="h-full">
+                <Reveal
+                  key={apt.id}
+                  mode="up"
+                  delay={(i % 6) * 60}
+                  className="h-full border-b border-r border-base-200"
+                >
                   <ApartmentCard
                     apt={apt}
                     onClick={() => nav(`/apartment/${apt.id}`)}
@@ -1012,25 +1017,61 @@ function buildActiveChips(
 // Apartment card
 // ─────────────────────────────────────────────────────────────────────────────
 
+const ROOM_LONG: Record<RoomType, string> = {
+  studio: "Студия",
+  "1": "1-комн.",
+  "2": "2-комн.",
+  "3": "3-комн.",
+  "4+": "4-комн.+",
+};
+
 function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }) {
+  const house = getHouse();
+  const section = house.sections.find((s) => s.number === apt.sectionNumber);
+  // Section.highFloor is unreliable (mostly 0), so derive the top floor from the
+  // highest floor that actually has apartments; fall back to the house max.
+  const topFloor = section
+    ? Math.max(...Object.keys(section.apartmentsByFloor).map(Number))
+    : house.highFloor;
+
   const tags: string[] = [];
   if (apt.features.largeKitchenLivingRoom) tags.push("Кухня-гостиная");
   if (apt.features.masterBedroom) tags.push("Мастер-спальня");
   if (apt.features.cornerGlazing) tags.push("Угловое остекление");
+
   return (
     <Pressable
       onClick={onClick}
       rippleColor="rgba(0,97,166,0.1)"
-      className="flex h-full w-full flex-col bg-base-0 p-6 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      className="flex h-full w-full flex-col bg-base-0 text-left"
     >
-      <div
-        className="relative w-full overflow-hidden bg-base-100"
-        style={{ aspectRatio: "4 / 3" }}
-      >
+      {/* Badge row — discount + feature tags */}
+      <div className="flex flex-wrap items-center gap-2 px-6 pt-6">
+        <span className="flex items-center gap-1.5 bg-accent px-2.5 py-1 font-sans text-[12px] font-semibold text-base-0">
+          <LightningIcon />
+          Скидка −{Math.round(DISCOUNT_RATE * 100)}%
+        </span>
+        {tags.slice(0, 1).map((t) => (
+          <span
+            key={t}
+            className="border border-base-300 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700"
+          >
+            {t}
+          </span>
+        ))}
+        {tags.length > 1 && (
+          <span className="border border-base-300 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700">
+            Ещё +{tags.length - 1}
+          </span>
+        )}
+      </div>
+
+      {/* Plan */}
+      <div className="relative w-full flex-1" style={{ minHeight: 240 }}>
         <PlanImage
           src={apartmentPlanUrl(apt)}
           alt=""
-          className="absolute inset-0 h-full w-full object-contain p-4"
+          className="absolute inset-0 h-full w-full object-contain p-6"
           fallback={
             <div className="grid h-full w-full place-items-center">
               <span className="font-display text-h5 font-semibold text-base-600">
@@ -1041,49 +1082,35 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
         />
       </div>
 
-      {tags.length > 0 && (
-        <div className="mt-5 flex flex-wrap gap-1.5">
-          {tags.slice(0, 3).map((t) => (
-            <span
-              key={t}
-              className="bg-base-100 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700"
-            >
-              {t}
-            </span>
-          ))}
-          {tags.length > 3 && (
-            <span className="bg-base-100 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700">
-              +{tags.length - 3}
-            </span>
-          )}
+      {/* Body */}
+      <div className="px-6 pb-6">
+        <h3 className="font-display text-[22px] font-bold uppercase leading-none tracking-[-0.01em] text-base-800">
+          {ROOM_LONG[apt.roomType]}
+        </h3>
+
+        <div className="mt-3 flex items-baseline gap-3">
+          <span className="font-display text-[24px] font-semibold leading-none text-accent">
+            {formatPrice(apt.price)}
+          </span>
+          <span className="font-sans text-small text-base-500 line-through">
+            {formatPrice(oldPrice(apt.price))}
+          </span>
         </div>
-      )}
 
-      <div className="mt-4 font-sans text-small font-medium uppercase tracking-wide text-base-600">
-        {roomTypeLabel(apt.roomType)} · {formatArea(apt.area)}
-      </div>
-
-      <div className="mt-1 flex items-baseline gap-3">
-        <span className="font-display text-[28px] font-semibold leading-none tracking-tight text-base-800">
-          {formatPrice(apt.price)}
-        </span>
-        <span className="bg-accent px-1.5 py-0.5 font-sans text-[12px] font-semibold text-base-0">
-          −{Math.round(DISCOUNT_RATE * 100)}%
-        </span>
-      </div>
-      <div className="mt-1 font-sans text-small font-medium text-base-500 line-through">
-        {formatPrice(oldPrice(apt.price))}
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-y-1.5 border-t border-base-200 pt-4 font-sans text-small">
-        <span className="text-base-600">Секция</span>
-        <span className="text-right font-medium text-base-800">{apt.sectionNumber}</span>
-        <span className="text-base-600">Этаж</span>
-        <span className="text-right font-medium text-base-800">{apt.floor}</span>
-        <span className="text-base-600">Цена за м²</span>
-        <span className="text-right font-medium text-base-800">
-          {formatPrice(apt.pricePerMeter)}
-        </span>
+        <div className="mt-4 flex items-end justify-between border-t border-base-200 pt-4">
+          <div className="font-sans text-small leading-relaxed text-base-700">
+            <p className="font-semibold text-base-800">МАСТЕРС</p>
+            <p>Сдача {house.endDate}</p>
+            <p>Секция {apt.sectionNumber}</p>
+            <p>
+              Этаж {apt.floor} из {topFloor}
+            </p>
+          </div>
+          <div className="font-display text-[40px] font-bold leading-none tracking-tight text-base-800">
+            {apt.area.toFixed(1).replace(".", ",")}
+            <span className="ml-1 align-top text-[15px] font-medium">м²</span>
+          </div>
+        </div>
       </div>
     </Pressable>
   );
