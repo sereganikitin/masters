@@ -12,22 +12,32 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Read access so the runner's GITHUB_TOKEN can fetch this (private) repo.
+    permissions:
+      contents: read
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT || 22 }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
+          # Forward the ephemeral repo token to the server for the git fetch.
+          envs: GH_TOKEN
           script: |
             set -euo pipefail
             cd ${{ secrets.DEPLOY_PATH || '/var/www/masters' }}
 
+            # The repo is private, so the server can't fetch anonymously. Use the
+            # runner's short-lived GITHUB_TOKEN (passed via envs) just for this
+            # fetch — nothing is stored in the server's git config.
             echo "==> Fetch latest"
-            git fetch --prune origin
-            git reset --hard origin/main
+            git fetch --prune "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" main
+            git reset --hard FETCH_HEAD
 
             echo "==> Install deps (incl. dev — needed for tsx/typescript build)"
             npm ci
