@@ -368,7 +368,10 @@ export function CatalogScreen() {
           bounds={bounds}
           sections={house.sections.map((s) => s.number)}
           perkKeys={availablePerks}
+          endDate={house.endDate || "—"}
+          resultCount={filtered.length}
           setFilters={setFilters}
+          onReset={reset}
           onClose={() => setDrawerOpen(false)}
         />
       )}
@@ -385,14 +388,20 @@ function AllFiltersDrawer({
   bounds,
   sections,
   perkKeys,
+  endDate,
+  resultCount,
   setFilters,
+  onReset,
   onClose,
 }: {
   filters: Filters;
   bounds: Filters;
   sections: number[];
   perkKeys: PerkKey[];
+  endDate: string;
+  resultCount: number;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  onReset: () => void;
   onClose: () => void;
 }) {
   return (
@@ -403,180 +412,216 @@ function AllFiltersDrawer({
         aria-label="Закрыть фильтры"
         className="absolute inset-0 bg-black/40"
       />
-      <aside className="absolute right-0 top-0 flex h-full w-[480px] flex-col bg-base-0 shadow-card">
-        <header className="flex items-center justify-between border-b border-base-200 px-8 py-6">
-          <h2 className="font-display text-h4 font-semibold text-base-800">
+      <aside className="absolute right-0 top-0 flex h-full w-[960px] max-w-[96vw] flex-col bg-base-0 shadow-card">
+        <header className="flex items-center justify-between border-b border-base-200 px-10 py-7">
+          <h2 className="font-display text-[28px] font-semibold uppercase tracking-[-0.01em] text-base-800">
             Все фильтры
           </h2>
           <CloseButton onClick={onClose} size={44} />
         </header>
 
         <div
-          className="min-h-0 flex-1 space-y-8 overflow-y-auto p-8"
+          className="grid min-h-0 flex-1 grid-cols-2 overflow-y-auto"
           style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
         >
-          <DrawerGroup title="Количество комнат">
-            <div className="grid grid-cols-4 gap-2">
-              {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
-                const active = filters.room.has(rt.key);
-                return (
-                  <Pressable
-                    key={rt.key}
-                    onClick={() =>
-                      setFilters((f) => {
-                        const next = new Set(f.room);
-                        active ? next.delete(rt.key) : next.add(rt.key);
-                        return { ...f, room: next };
-                      })
-                    }
-                    rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
-                    className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
-                      active
-                        ? "bg-night-500 text-base-0"
-                        : "border border-base-600 bg-base-0 text-base-800"
-                    }`}
-                  >
-                    {rt.label}
-                  </Pressable>
-                );
-              })}
-            </div>
-          </DrawerGroup>
+          {/* Left column — apartment parameters */}
+          <div className="space-y-8 border-r border-base-200 p-10">
+            <h3 className="font-display text-h4 font-semibold text-base-800">
+              Параметры квартиры
+            </h3>
 
-          <DrawerGroup title="Стоимость, млн ₽">
-            <div className="border border-base-600 px-5 py-3">
-              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
-                <span>{formatPrice(filters.minPrice)}</span>
-                <span>{formatPrice(filters.maxPrice)}</span>
+            <DrawerGroup title="Количество комнат">
+              <div className="grid grid-cols-4 gap-2">
+                {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
+                  const active = filters.room.has(rt.key);
+                  return (
+                    <Pressable
+                      key={rt.key}
+                      onClick={() =>
+                        setFilters((f) => {
+                          const next = new Set(f.room);
+                          active ? next.delete(rt.key) : next.add(rt.key);
+                          return { ...f, room: next };
+                        })
+                      }
+                      rippleColor={active ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"}
+                      className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
+                        active
+                          ? "bg-night-500 text-base-0"
+                          : "border border-base-600 bg-base-0 text-base-800"
+                      }`}
+                    >
+                      {rt.label}
+                    </Pressable>
+                  );
+                })}
               </div>
-              <RangeSlider
-                hideValues
-                min={bounds.minPrice}
-                max={bounds.maxPrice}
-                step={100_000}
-                value={[filters.minPrice, filters.maxPrice]}
-                format={(v) => (v / 1_000_000).toFixed(1).replace(".", ",")}
-                onChange={([lo, hi]) =>
-                  setFilters((f) => ({ ...f, minPrice: lo, maxPrice: hi }))
-                }
-              />
-            </div>
-          </DrawerGroup>
+            </DrawerGroup>
 
-          <DrawerGroup title="Площадь, м²">
-            <div className="border border-base-600 px-5 py-3">
-              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
-                <span>от {formatArea(filters.minArea)}</span>
-                <span>до {formatArea(filters.maxArea)}</span>
+            <DrawerGroup title="Стоимость, млн ₽">
+              <div className="border border-base-600 px-5 py-3">
+                <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                  <span>{formatPrice(filters.minPrice)}</span>
+                  <span>{formatPrice(filters.maxPrice)}</span>
+                </div>
+                <RangeSlider
+                  hideValues
+                  min={bounds.minPrice}
+                  max={bounds.maxPrice}
+                  step={100_000}
+                  value={[filters.minPrice, filters.maxPrice]}
+                  format={(v) => (v / 1_000_000).toFixed(1).replace(".", ",")}
+                  onChange={([lo, hi]) =>
+                    setFilters((f) => ({ ...f, minPrice: lo, maxPrice: hi }))
+                  }
+                />
               </div>
-              <RangeSlider
-                hideValues
-                min={bounds.minArea}
-                max={bounds.maxArea}
-                step={1}
-                value={[filters.minArea, filters.maxArea]}
-                format={(v) => formatArea(v)}
-                onChange={([lo, hi]) =>
-                  setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
-                }
-              />
-            </div>
-          </DrawerGroup>
+            </DrawerGroup>
 
-          <DrawerGroup title="Этаж">
-            <div className="border border-base-600 px-5 py-3">
-              <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
-                <span>от {filters.minFloor}</span>
-                <span>до {filters.maxFloor}</span>
+            <DrawerGroup title="Площадь, м²">
+              <div className="border border-base-600 px-5 py-3">
+                <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                  <span>от {formatArea(filters.minArea)}</span>
+                  <span>до {formatArea(filters.maxArea)}</span>
+                </div>
+                <RangeSlider
+                  hideValues
+                  min={bounds.minArea}
+                  max={bounds.maxArea}
+                  step={1}
+                  value={[filters.minArea, filters.maxArea]}
+                  format={(v) => formatArea(v)}
+                  onChange={([lo, hi]) =>
+                    setFilters((f) => ({ ...f, minArea: lo, maxArea: hi }))
+                  }
+                />
               </div>
-              <RangeSlider
-                hideValues
-                min={bounds.minFloor}
-                max={bounds.maxFloor}
-                step={1}
-                value={[filters.minFloor, filters.maxFloor]}
-                format={(v) => String(v)}
-                onChange={([lo, hi]) =>
-                  setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
-                }
+            </DrawerGroup>
+
+            <DrawerGroup title="Этаж">
+              <div className="border border-base-600 px-5 py-3">
+                <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
+                  <span>от {filters.minFloor}</span>
+                  <span>до {filters.maxFloor}</span>
+                </div>
+                <RangeSlider
+                  hideValues
+                  min={bounds.minFloor}
+                  max={bounds.maxFloor}
+                  step={1}
+                  value={[filters.minFloor, filters.maxFloor]}
+                  format={(v) => String(v)}
+                  onChange={([lo, hi]) =>
+                    setFilters((f) => ({ ...f, minFloor: lo, maxFloor: hi }))
+                  }
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <QuickChip
+                  active={filters.excludeFirstFloor}
+                  onClick={() =>
+                    setFilters((f) => ({ ...f, excludeFirstFloor: !f.excludeFirstFloor }))
+                  }
+                >
+                  Не первый
+                </QuickChip>
+                <QuickChip
+                  active={filters.excludeLastFloor}
+                  onClick={() =>
+                    setFilters((f) => ({ ...f, excludeLastFloor: !f.excludeLastFloor }))
+                  }
+                >
+                  Не последний
+                </QuickChip>
+              </div>
+            </DrawerGroup>
+
+            <DrawerGroup title="Срок сдачи">
+              <span className="inline-flex h-12 items-center bg-night-500 px-5 font-sans text-body font-medium text-base-0">
+                {endDate}
+              </span>
+            </DrawerGroup>
+          </div>
+
+          {/* Right column — features */}
+          <div className="space-y-8 p-10">
+            <h3 className="font-display text-h4 font-semibold text-base-800">
+              Особенности
+            </h3>
+
+            <DrawerGroup title="Акции">
+              <DiscountChip
+                active={filters.discount}
+                onClick={() => setFilters((f) => ({ ...f, discount: !f.discount }))}
               />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <QuickChip
-                active={filters.excludeFirstFloor}
-                onClick={() =>
-                  setFilters((f) => ({ ...f, excludeFirstFloor: !f.excludeFirstFloor }))
-                }
-              >
-                Не первый
-              </QuickChip>
-              <QuickChip
-                active={filters.excludeLastFloor}
-                onClick={() =>
-                  setFilters((f) => ({ ...f, excludeLastFloor: !f.excludeLastFloor }))
-                }
-              >
-                Не последний
-              </QuickChip>
-            </div>
-          </DrawerGroup>
+            </DrawerGroup>
 
-          <DrawerGroup title="Секция">
-            <div className="flex flex-wrap gap-2">
-              {sections.map((n) => {
-                const active = filters.sections.has(n);
-                return (
-                  <QuickChip
-                    key={n}
-                    active={active}
-                    onClick={() =>
-                      setFilters((f) => {
-                        const next = new Set(f.sections);
-                        active ? next.delete(n) : next.add(n);
-                        return { ...f, sections: next };
-                      })
-                    }
-                  >
-                    С{n}
-                  </QuickChip>
-                );
-              })}
-            </div>
-          </DrawerGroup>
+            {perkKeys.length > 0 && (
+              <DrawerGroup title="Особенности">
+                <div className="flex flex-wrap gap-2">
+                  {perkKeys.map((k) => {
+                    const active = filters.perks.has(k);
+                    return (
+                      <QuickChip
+                        key={k}
+                        active={active}
+                        onClick={() =>
+                          setFilters((f) => {
+                            const next = new Set(f.perks);
+                            active ? next.delete(k) : next.add(k);
+                            return { ...f, perks: next };
+                          })
+                        }
+                      >
+                        {PERK_LABELS[k]}
+                      </QuickChip>
+                    );
+                  })}
+                </div>
+              </DrawerGroup>
+            )}
 
-          {perkKeys.length > 0 && (
-          <DrawerGroup title="Особенности">
-            <div className="flex flex-col gap-2">
-              {perkKeys.map((k) => {
-                const active = filters.perks.has(k);
-                return (
-                  <QuickChip
-                    key={k}
-                    active={active}
-                    onClick={() =>
-                      setFilters((f) => {
-                        const next = new Set(f.perks);
-                        active ? next.delete(k) : next.add(k);
-                        return { ...f, perks: next };
-                      })
-                    }
-                  >
-                    {PERK_LABELS[k]}
-                  </QuickChip>
-                );
-              })}
-            </div>
-          </DrawerGroup>
-          )}
+            <DrawerGroup title="Секция">
+              <div className="flex flex-wrap gap-2">
+                {sections.map((n) => {
+                  const active = filters.sections.has(n);
+                  return (
+                    <QuickChip
+                      key={n}
+                      active={active}
+                      onClick={() =>
+                        setFilters((f) => {
+                          const next = new Set(f.sections);
+                          active ? next.delete(n) : next.add(n);
+                          return { ...f, sections: next };
+                        })
+                      }
+                    >
+                      С{n}
+                    </QuickChip>
+                  );
+                })}
+              </div>
+            </DrawerGroup>
+          </div>
         </div>
 
-        <footer className="border-t border-base-200 p-6">
+        <footer className="flex items-center gap-4 border-t border-base-200 px-10 py-5">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex h-14 items-center gap-2 border border-base-600 bg-base-0 px-6 font-sans text-body font-medium text-base-700 transition-colors hover:bg-base-100"
+          >
+            <CrossIcon />
+            Сбросить все
+          </button>
           <Pressable
             onClick={onClose}
-            rippleColor="rgba(255,255,255,0.25)"
-            className="flex h-14 w-full items-center justify-center bg-accent font-sans text-body font-medium text-base-0"
+            rippleColor="rgba(255,255,255,0.2)"
+            className="flex h-14 flex-1 items-center justify-center bg-night-500 font-sans text-body font-medium text-base-0"
           >
-            Применить
+            Смотреть {resultCount}{" "}
+            {pluralize(resultCount, ["квартиру", "квартиры", "квартир"])}
           </Pressable>
         </footer>
       </aside>
