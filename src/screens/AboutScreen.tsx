@@ -581,7 +581,7 @@ function Layouts() {
     "4+": "4-комн. квартир",
   };
 
-  // Tag chips — first one shown solid, rest dimmed, with "+N" overflow.
+  // Tag chips — first one shown solid, the rest dimmed.
   const tags: string[] = [];
   if (sample?.decoration) tags.push(sample.decoration);
   if (sample?.features.largeKitchenLivingRoom) tags.push("Кухня-гостиная");
@@ -591,8 +591,6 @@ function Layouts() {
   if ((sample?.features.loggiaCount ?? 0) > 0) tags.push("Лоджия");
   // Static placeholder until we get real "options" feed from CRM.
   if (tags.length < 2) tags.push("Гардеробная");
-  const VISIBLE_TAGS = 2;
-  const hiddenTagCount = Math.max(0, tags.length - VISIBLE_TAGS);
 
   return (
     <section id="layouts" className={`${PAGE_PAD} py-16`}>
@@ -698,7 +696,7 @@ function Layouts() {
             <div className="flex flex-col gap-8 p-8 pb-32">
               {/* Tag chips */}
               <div className="flex flex-wrap gap-2">
-                {tags.slice(0, VISIBLE_TAGS).map((t, idx) => (
+                {tags.map((t, idx) => (
                   <span
                     key={t}
                     className={`px-3 py-1.5 font-sans text-small font-medium ${
@@ -708,11 +706,6 @@ function Layouts() {
                     {t}
                   </span>
                 ))}
-                {hiddenTagCount > 0 && (
-                  <span className="bg-base-0/15 px-3 py-1.5 font-sans text-small font-medium text-base-0">
-                    Ещё +{hiddenTagCount}
-                  </span>
-                )}
               </div>
 
               {/* Title block */}
