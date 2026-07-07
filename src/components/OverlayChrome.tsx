@@ -10,7 +10,14 @@ interface OverlayChromeProps {
 
 export function OverlayChrome({ onClose, onBack, backLabel }: OverlayChromeProps) {
   const nav = useNavigate();
-  const close = onClose ?? (() => nav("/"));
+  // Default close returns to wherever the overlay was opened from (browser
+  // back), falling back to home only when there's no history to pop.
+  const close =
+    onClose ??
+    (() => {
+      if (window.history.length > 1) nav(-1);
+      else nav("/");
+    });
 
   return (
     <>

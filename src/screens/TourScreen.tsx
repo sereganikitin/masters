@@ -1,10 +1,8 @@
-import { useNavigate } from "react-router-dom";
 import { OverlayChrome } from "@/components/OverlayChrome";
 
 const TOUR_URL = "https://svl.virtualland.ru/masters/?s=s0p1h120mt1&h=32.17&v=18&fov=110";
 
 export function TourScreen() {
-  const nav = useNavigate();
   return (
     <div className="relative h-full w-full bg-black">
       <iframe
@@ -15,7 +13,9 @@ export function TourScreen() {
         allowFullScreen
         loading="lazy"
       />
-      <OverlayChrome onClose={() => nav("/")} />
+      {/* No onClose — OverlayChrome's default returns to the previous page
+          (e.g. the About page, at the same scroll position). */}
+      <OverlayChrome />
     </div>
   );
 }

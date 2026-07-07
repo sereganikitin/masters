@@ -6,6 +6,7 @@ import { PlanImage } from "@/components/PlanImage";
 import { RangeSlider } from "@/components/RangeSlider";
 import { CloseButton } from "@/components/CloseButton";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import {
   getHouse,
   formatArea,
@@ -209,6 +210,9 @@ export function CatalogScreen() {
     return parts.length === 0 ? "Все" : parts.join(" · ");
   })();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollRestoration(scrollRef);
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
       <CloseButton
@@ -220,6 +224,7 @@ export function CatalogScreen() {
       />
 
       <div
+        ref={scrollRef}
         className="h-full w-full overflow-y-auto"
         style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}
       >

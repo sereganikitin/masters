@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { Reveal } from "@/components/Reveal";
 import { Pressable } from "@/components/Pressable";
 import { PlanImage } from "@/components/PlanImage";
@@ -33,6 +34,8 @@ import {
 
 export function AboutScreen() {
   const nav = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useScrollRestoration(scrollRef);
   return (
     <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
       <CloseButton
@@ -41,6 +44,7 @@ export function AboutScreen() {
       />
 
       <div
+        ref={scrollRef}
         className="h-full w-full overflow-y-auto"
         style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
       >
