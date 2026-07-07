@@ -210,7 +210,7 @@ export function CatalogScreen() {
   })();
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-base-100 text-base-800">
+    <div className="relative h-full w-full overflow-hidden bg-base-0 text-base-800">
       <CloseButton
         onClick={() => {
           if (window.history.length > 1) nav(-1);
@@ -229,8 +229,9 @@ export function CatalogScreen() {
             Квартиры
           </h1>
 
-          {/* Top row — 3 columns (Параметры / Стоимость / Срок сдачи) */}
-          <div className="mt-10 grid grid-cols-3 gap-5">
+          {/* Top row — 3 columns (Параметры / Стоимость / Срок сдачи),
+              flush together with collapsed 1px dividers */}
+          <div className="mt-10 grid grid-cols-3 [&>*+*]:-ml-px">
             <ParamsDropdown
               label="Параметры квартиры"
               value={paramSummary}
@@ -308,6 +309,8 @@ export function CatalogScreen() {
           )}
         </header>
 
+        {/* ───────────── Grey results region (sort + cards + footer) ───────────── */}
+        <div className="bg-base-100">
         {/* ───────────── Sort + count ───────────── */}
         <div className="flex items-center justify-between px-12 py-5">
           <SortSelect value={sort} onChange={setSort} />
@@ -360,6 +363,7 @@ export function CatalogScreen() {
         </main>
 
         <SiteFooter pad="px-12" />
+        </div>
       </div>
 
       {drawerOpen && (
