@@ -968,7 +968,7 @@ function Construction() {
             <select
               value={monthIdx}
               onChange={(e) => setMonthIdx(Number(e.target.value))}
-              className="h-14 w-full cursor-pointer appearance-none border border-base-300 bg-base-0 pl-5 pr-12 font-sans text-body font-medium text-base-800 outline-none transition-colors hover:border-base-400"
+              className="h-14 w-full cursor-pointer appearance-none border border-base-200 bg-base-0 pl-5 pr-12 font-sans text-body font-medium text-base-800 outline-none transition-colors hover:border-base-600"
             >
               {entries.map((e, i) => (
                 <option key={`${e.year}-${e.month}`} value={i}>

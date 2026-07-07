@@ -299,7 +299,7 @@ export function CatalogScreen() {
               <button
                 type="button"
                 onClick={reset}
-                className="ml-auto flex h-10 items-center gap-2 border border-base-600 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
+                className="ml-auto flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
               >
                 <CrossIcon />
                 Сбросить все
@@ -448,7 +448,7 @@ function AllFiltersDrawer({
                       className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
                         active
                           ? "bg-night-500 text-base-0"
-                          : "border border-base-600 bg-base-0 text-base-800"
+                          : "border border-base-200 bg-base-0 text-base-800"
                       }`}
                     >
                       {rt.label}
@@ -459,7 +459,7 @@ function AllFiltersDrawer({
             </DrawerGroup>
 
             <DrawerGroup title="Стоимость, млн ₽">
-              <div className="border border-base-600 px-5 py-3">
+              <div className="border border-base-200 px-5 py-3">
                 <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                   <span>{formatPrice(filters.minPrice)}</span>
                   <span>{formatPrice(filters.maxPrice)}</span>
@@ -479,7 +479,7 @@ function AllFiltersDrawer({
             </DrawerGroup>
 
             <DrawerGroup title="Площадь, м²">
-              <div className="border border-base-600 px-5 py-3">
+              <div className="border border-base-200 px-5 py-3">
                 <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                   <span>от {formatArea(filters.minArea)}</span>
                   <span>до {formatArea(filters.maxArea)}</span>
@@ -499,7 +499,7 @@ function AllFiltersDrawer({
             </DrawerGroup>
 
             <DrawerGroup title="Этаж">
-              <div className="border border-base-600 px-5 py-3">
+              <div className="border border-base-200 px-5 py-3">
                 <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                   <span>от {filters.minFloor}</span>
                   <span>до {filters.maxFloor}</span>
@@ -610,7 +610,7 @@ function AllFiltersDrawer({
           <button
             type="button"
             onClick={onReset}
-            className="flex h-14 items-center gap-2 border border-base-600 bg-base-0 px-6 font-sans text-body font-medium text-base-700 transition-colors hover:bg-base-100"
+            className="flex h-14 items-center gap-2 border border-base-200 bg-base-0 px-6 font-sans text-body font-medium text-base-700 transition-colors hover:bg-base-100"
           >
             <CrossIcon />
             Сбросить все
@@ -691,7 +691,7 @@ function ParamsDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-[72px] w-full items-center justify-between border border-base-600 bg-base-0 px-5 text-left transition-colors hover:border-base-300"
+        className="flex h-[72px] w-full items-center justify-between border border-base-200 bg-base-0 px-5 text-left transition-colors hover:border-base-600"
       >
         <div className="flex min-w-0 flex-col">
           <span className="font-sans text-[12px] text-base-600">{label}</span>
@@ -703,7 +703,7 @@ function ParamsDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-600 bg-base-0 p-5 shadow-card">
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-200 bg-base-0 p-5 shadow-card">
           <ParamsBlock title="Количество спален">
             <div className="grid grid-cols-4 gap-2">
               {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
@@ -718,7 +718,7 @@ function ParamsDropdown({
                     className={`flex h-12 items-center justify-center font-sans text-body font-medium transition-colors ${
                       active
                         ? "bg-night-500 text-base-0"
-                        : "border border-base-600 bg-base-0 text-base-800"
+                        : "border border-base-200 bg-base-0 text-base-800"
                     }`}
                   >
                     {rt.label}
@@ -729,7 +729,7 @@ function ParamsDropdown({
           </ParamsBlock>
 
           <ParamsBlock title="Площадь, м²">
-            <div className="border border-base-600 px-5 py-3">
+            <div className="border border-base-200 px-5 py-3">
               <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                 <span>от {formatArea(filters.minArea)}</span>
                 <span>до {formatArea(filters.maxArea)}</span>
@@ -749,7 +749,7 @@ function ParamsDropdown({
           </ParamsBlock>
 
           <ParamsBlock title="Этаж">
-            <div className="border border-base-600 px-5 py-3">
+            <div className="border border-base-200 px-5 py-3">
               <div className="flex items-center justify-between font-sans text-body font-medium text-base-800">
                 <span>от {filters.minFloor}</span>
                 <span>до {filters.maxFloor}</span>
@@ -821,7 +821,7 @@ function DropdownPlaceholder({
 }) {
   // Static placeholder — no data backing yet (e.g. «Срок сдачи»).
   return (
-    <div className="flex h-[72px] w-full cursor-default items-center justify-between border border-base-600 bg-base-0 px-5 text-left">
+    <div className="flex h-[72px] w-full cursor-default items-center justify-between border border-base-200 bg-base-0 px-5 text-left">
       <div className="flex min-w-0 flex-col">
         <span className="font-sans text-[12px] text-base-600">{label}</span>
         <span className="mt-1 truncate font-sans text-body font-medium text-base-800">
@@ -849,7 +849,7 @@ function PriceSliderCard({
   const toMln = (v: number) => (v / 1_000_000).toFixed(1).replace(".", ",");
   const [lo, hi] = value;
   return (
-    <div className="flex h-[72px] flex-col justify-center border border-base-600 bg-base-0 px-5">
+    <div className="flex h-[72px] flex-col justify-center border border-base-200 bg-base-0 px-5">
       <div className="flex items-center justify-between gap-3">
         <span className="font-sans text-[12px] text-base-600">{label}</span>
         <span className="font-sans text-[12px] font-medium tabular-nums text-base-800">
@@ -909,7 +909,7 @@ function QuickChip({
       className={`flex h-12 items-center px-4 font-sans text-body font-medium transition-colors ${
         active
           ? "bg-night-500 text-base-0"
-          : "border border-base-600 bg-base-0 text-base-800"
+          : "border border-base-200 bg-base-0 text-base-800"
       }`}
     >
       {children}
@@ -928,7 +928,7 @@ function RemovableChip({
     <button
       type="button"
       onClick={onRemove}
-      className="flex h-10 items-center gap-2 border border-base-600 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
+      className="flex h-10 items-center gap-2 border border-base-200 bg-base-0 px-4 font-sans text-small font-medium text-base-700 hover:bg-base-100"
     >
       <CrossIcon />
       {children}
@@ -1099,13 +1099,13 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
         {tags.slice(0, 1).map((t) => (
           <span
             key={t}
-            className="border border-base-300 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700"
+            className="border border-base-200 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700"
           >
             {t}
           </span>
         ))}
         {tags.length > 1 && (
-          <span className="border border-base-300 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700">
+          <span className="border border-base-200 px-2.5 py-1 font-sans text-[12px] font-medium text-base-700">
             Ещё +{tags.length - 1}
           </span>
         )}

@@ -106,7 +106,7 @@ export function ApartmentScreen() {
                           ? "cursor-not-allowed border border-base-200 bg-base-0 text-base-800/35"
                           : isActive
                             ? "bg-night-500 text-base-0"
-                            : "border border-base-600 bg-base-0 text-base-800"
+                            : "border border-base-200 bg-base-0 text-base-800"
                       }`}
                       title={t.disabled ? "Появится позже" : undefined}
                     >

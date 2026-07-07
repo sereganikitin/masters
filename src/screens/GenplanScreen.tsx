@@ -184,7 +184,7 @@ export function GenplanScreen() {
                     ? "cursor-not-allowed border border-base-200 bg-base-0/50 text-base-800/35"
                     : active
                       ? "bg-night-500 text-base-0"
-                      : "border border-base-600 bg-base-0/95 text-base-800"
+                      : "border border-base-200 bg-base-0/95 text-base-800"
                 }`}
                 title={!enabled ? "Нет квартир такого типа" : undefined}
               >
