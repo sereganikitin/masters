@@ -38,6 +38,12 @@ export function formatPrice(price: number): string {
   return `${Math.round(price).toLocaleString("ru-RU")} ₽`;
 }
 
+/** Full price with thousands separators, e.g. "39 327 057 ₽" — for lot cards
+ * where we show the exact price (not the abbreviated «млн» slider labels). */
+export function formatPriceFull(price: number): string {
+  return `${Math.round(price).toLocaleString("ru-RU")} ₽`;
+}
+
 export function formatArea(area: number): string {
   return `${area.toFixed(1).replace(".", ",")} м²`;
 }

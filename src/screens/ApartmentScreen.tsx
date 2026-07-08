@@ -12,6 +12,7 @@ import {
   getHouse,
   formatArea,
   formatPrice,
+  formatPriceFull,
   roomTypeLabel,
 } from "@/data/complex";
 import { apartmentPlanUrl, floorPlanUrl } from "@/lib/plans";
@@ -170,10 +171,10 @@ export function ApartmentScreen() {
                   </h2>
                   <div className="mt-4 flex items-baseline gap-3">
                     <p className="font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
-                      {formatPrice(discountedPrice(apt.price))}
+                      {formatPriceFull(discountedPrice(apt.price))}
                     </p>
                     <p className="font-sans text-body text-base-0/40 line-through">
-                      {formatPrice(apt.price)}
+                      {formatPriceFull(apt.price)}
                     </p>
                   </div>
                   <p className="mt-2 font-sans text-small text-base-0/55">

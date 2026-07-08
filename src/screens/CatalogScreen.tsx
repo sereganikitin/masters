@@ -12,6 +12,7 @@ import {
   getHouse,
   formatArea,
   formatPrice,
+  formatPriceFull,
   roomTypeLabel,
   ROOM_TYPES,
 } from "@/data/complex";
@@ -1143,10 +1144,10 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
 
         <div className="mt-3 flex items-baseline gap-3">
           <span className="font-display text-[24px] font-semibold leading-none text-accent">
-            {formatPrice(discountedPrice(apt.price))}
+            {formatPriceFull(discountedPrice(apt.price))}
           </span>
           <span className="font-sans text-small text-base-500 line-through">
-            {formatPrice(apt.price)}
+            {formatPriceFull(apt.price)}
           </span>
         </div>
 
