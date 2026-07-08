@@ -16,7 +16,11 @@ export interface Apartment {
   buildingNumber: number;
   decoration: string;
   status: string;
-  /** Position of this apartment on its floor (1-based). Used to build plan URL. */
+  /** Developer's position number on the floor (mcdsoft_number_on_site). This is
+   * what the CG plan asset filenames are keyed by — use it for the plan URL. */
+  numberOnSite: number;
+  /** Our own 1-based index among available lots on the floor. Kept as a plan
+   * fallback only when numberOnSite is missing. */
   lotOnFloor: number;
   features: {
     cornerGlazing: boolean;

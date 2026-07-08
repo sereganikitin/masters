@@ -440,8 +440,8 @@ function AllFiltersDrawer({
             </h3>
 
             <DrawerGroup title="Количество комнат">
-              <div className="grid grid-cols-4 gap-2">
-                {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
+              <div className="grid grid-cols-5 gap-2">
+                {ROOM_TYPES.map((rt) => {
                   const active = filters.room.has(rt.key);
                   return (
                     <Pressable
@@ -714,8 +714,8 @@ function ParamsDropdown({
       {open && (
         <div className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col gap-6 border border-base-200 bg-base-0 p-5 shadow-card">
           <ParamsBlock title="Количество спален">
-            <div className="grid grid-cols-4 gap-2">
-              {ROOM_TYPES.filter((rt) => rt.key !== "studio").map((rt) => {
+            <div className="grid grid-cols-5 gap-2">
+              {ROOM_TYPES.map((rt) => {
                 const active = filters.room.has(rt.key);
                 return (
                   <Pressable

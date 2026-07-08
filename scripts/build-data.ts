@@ -81,6 +81,7 @@ function transformProperty(raw: Record<string, unknown>): Apartment {
     id: String(raw.mcdsoft_propertyid ?? ""),
     code: String(raw.mcdsoft_code ?? ""),
     number: parseRu(raw.mcdsoft_relevant_number as string) || parseRu(raw.mcdsoft_number_on_site as string),
+    numberOnSite: parseRu(raw.mcdsoft_number_on_site as string),
     roomType: toRoomType(rooms, isStudio),
     rooms,
     isStudio,
