@@ -15,6 +15,7 @@ import {
   roomTypeLabel,
 } from "@/data/complex";
 import { apartmentPlanUrl, floorPlanUrl } from "@/lib/plans";
+import { discountedPrice, discountedPricePerMeter } from "@/lib/pricing";
 import type { Apartment } from "@/data/types";
 
 type PlanTab = "plan" | "floor" | "genplan" | "views";
@@ -156,7 +157,7 @@ export function ApartmentScreen() {
                   <dd className="text-right font-medium text-base-0">{apt.number}</dd>
                   <dt className="text-base-0/55">Цена за м²</dt>
                   <dd className="text-right font-medium text-base-0">
-                    {formatPrice(apt.pricePerMeter)}
+                    {formatPrice(discountedPricePerMeter(apt.price, apt.area))}
                   </dd>
                 </dl>
               </Reveal>
@@ -167,8 +168,16 @@ export function ApartmentScreen() {
                   <h2 className="font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
                     {roomTypeLabel(apt.roomType)}, {formatArea(apt.area)}
                   </h2>
-                  <p className="mt-4 font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
-                    {formatPrice(apt.price)}
+                  <div className="mt-4 flex items-baseline gap-3">
+                    <p className="font-display text-[28px] font-semibold uppercase leading-none tracking-[0.02em]">
+                      {formatPrice(discountedPrice(apt.price))}
+                    </p>
+                    <p className="font-sans text-body text-base-0/40 line-through">
+                      {formatPrice(apt.price)}
+                    </p>
+                  </div>
+                  <p className="mt-2 font-sans text-small text-base-0/55">
+                    −10% при 100% оплате
                   </p>
                 </div>
               </Reveal>

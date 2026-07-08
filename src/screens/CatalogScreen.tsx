@@ -7,6 +7,7 @@ import { RangeSlider } from "@/components/RangeSlider";
 import { CloseButton } from "@/components/CloseButton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
+import { DISCOUNT_RATE, discountedPrice } from "@/lib/pricing";
 import {
   getHouse,
   formatArea,
@@ -20,8 +21,6 @@ import type { Apartment, RoomType } from "@/data/types";
 // Flat promo discount applied to every lot. The lot's `price` in the feed is
 // the CURRENT (discounted) price; the struck-through "old" price is derived by
 // grossing it back up. Change this single constant to adjust the promo.
-const DISCOUNT_RATE = 0.1;
-const oldPrice = (price: number) => Math.round(price / (1 - DISCOUNT_RATE));
 
 type SortKey =
   | "price-asc"
@@ -1144,10 +1143,10 @@ function ApartmentCard({ apt, onClick }: { apt: Apartment; onClick: () => void }
 
         <div className="mt-3 flex items-baseline gap-3">
           <span className="font-display text-[24px] font-semibold leading-none text-accent">
-            {formatPrice(apt.price)}
+            {formatPrice(discountedPrice(apt.price))}
           </span>
           <span className="font-sans text-small text-base-500 line-through">
-            {formatPrice(oldPrice(apt.price))}
+            {formatPrice(apt.price)}
           </span>
         </div>
 
