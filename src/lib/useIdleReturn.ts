@@ -3,6 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 const IDLE_MS = 90_000;
 const HERO_PATH = "/";
+// Routes where the idle auto-return must be disabled. The 3D tour renders an
+// external iframe that swallows all pointer/touch events, so the parent window
+// never sees activity and would wrongly time out to the home screen — the
+// panorama must be closed manually only.
+const NO_IDLE_PATHS = new Set([HERO_PATH, "/tour"]);
 const ACTIVITY_EVENTS = ["pointerdown", "touchstart", "wheel", "keydown"] as const;
 
 export function useIdleReturn(idleMs: number = IDLE_MS) {
@@ -10,7 +15,7 @@ export function useIdleReturn(idleMs: number = IDLE_MS) {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (pathname === HERO_PATH) return;
+    if (NO_IDLE_PATHS.has(pathname)) return;
 
     let timer: number | undefined;
     const reset = () => {
